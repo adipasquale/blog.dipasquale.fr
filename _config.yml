@@ -4,7 +4,7 @@ email:       adrien@dipasquale.fr
 author:      Adrien Di Pasquale
 description: "Mostly blogging about web development"
 baseurl:     ""
-url:         "http://blog.dipasquale.fr"
+url:         "https://blog.dipasquale.fr"
 date_format: "%b %-d, %Y"
 header_pages:
  - contact.html
@@ -21,7 +21,7 @@ bing_verification:
 # Optional features
 animated:             false
 show_related_posts:   false
-show_post_footers:    false
+show_post_footers:    true
 show_social_icons:    true
 ajaxify_contact_form: false
 enable_mathjax: false

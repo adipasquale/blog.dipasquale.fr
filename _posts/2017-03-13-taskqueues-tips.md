@@ -18,4 +18,4 @@ As a TLDR; this post suggests :
 - Also monitor your queues SLAs, your worker's memory and exceptions, and your CRON
 - Check your DB connection pool
 
-I also spoke about this in a meetup talk, you can find the slides here : [http://adipasquale.github.io/taskqueues-slides-2015](http://adipasquale.github.io/taskqueues-slides-2015)
+I also spoke about this in a meetup talk, you can find the slides here : [https://adipasquale.github.io/taskqueues-slides-2015](https://adipasquale.github.io/taskqueues-slides-2015)

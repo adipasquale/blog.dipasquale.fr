@@ -9,7 +9,7 @@ This is the story of an epic fight. Me (regular guy) vs the server (Rails 3, dep
 
 If you already know the deal (or just don’t want to hear me whine) jump [there](#task) for the Capistrano task that’ll magically expand your environment variables in the config.
 
-First if you follow Mandrill’s [guide](http://help.mandrill.com/entries/21738467-Using-Mandrill-s-SMTP-integration-with-Web-Frameworks) (spoiler: you should not), this is what you’d set up in your config/production.rb :
+First if you follow Mandrill’s [guide](https://help.mandrill.com/entries/21738467-Using-Mandrill-s-SMTP-integration-with-Web-Frameworks) (spoiler: you should not), this is what you’d set up in your config/production.rb :
 
 ```ruby
 config.action_mailer.smtp_settings = {
@@ -50,12 +50,12 @@ touch tmp/restart.txt
 ```
 
 And I could now see a beautiful `Net::SMTPServerBusy, Relay access denied error`. First I believed it came from a blocked 587 port, got postfix to work, and everything worked fin, hmmm. Heck, it even worked when I launched a thin server on the prod !
-This [Stack Overflow](http://stackoverflow.com/questions/13963795/rails-mailer-netsmtpserverbusy) entry showed me the way to the problem : Passenger doesn’t set your environment variables when you fire it up.
+This [Stack Overflow](https://stackoverflow.com/questions/13963795/rails-mailer-netsmtpserverbusy) entry showed me the way to the problem : Passenger doesn’t set your environment variables when you fire it up.
 
-One solution is to load your variables in the wrapper around Ruby interpreter that Passenger uses (more info on this [here](http://blog.rayapps.com/2008/05/21/using-mod_rails-with-rails-applications-on-oracle/)). I don’t like this idea much, it feels very hacky, what’ll happen when I’ll upgrade my Ruby for example ?
+One solution is to load your variables in the wrapper around Ruby interpreter that Passenger uses (more info on this [here](https://blog.rayapps.com/2008/05/21/using-mod_rails-with-rails-applications-on-oracle/)). I don’t like this idea much, it feels very hacky, what’ll happen when I’ll upgrade my Ruby for example ?
 
 My solution is to expand the variables in your config file during the deploy (meaning replacing ENV[“MANDRILL_USERNAME”] with the actuall username value, copied from the environment variable).
-This amazing [SO answer](http://stackoverflow.com/questions/1609423/using-sed-to-expand-environment-variables-inside-files#answer-1610500) helped a lot, I tweaked it a bit to fit a Capistrano deploy task. It will expand ANY of your environment variables, how great is that ?!
+This amazing [SO answer](https://stackoverflow.com/questions/1609423/using-sed-to-expand-environment-variables-inside-files#answer-1610500) helped a lot, I tweaked it a bit to fit a Capistrano deploy task. It will expand ANY of your environment variables, how great is that ?!
 
 Warning: this is some mad-ass syntax, even the built-in highlighter can’t figure it out. There’s a LOT of escaping, between sed syntax and ruby’s …
 
@@ -72,7 +72,7 @@ after "deploy:update_code", "deploy:replace_env_vars"
 
 Note : this will only replace strings that use double quotes like `ENV[“JESSICA_ALBA_PHONE_NUMBER”]` (I gather you wouldn’t share that piece of intel with any other developer)
 
-Hey, lucky you ! There’s a last step, and it’s so easy it feels good. By default, the SSH session opened by Capistrano doesn’t execute your init scripts (~/.profile, ~/.bashrc, not even /etc/profile/). These are [DanM instructions](http://pretheory.wordpress.com/2008/02/12/capistrano-path-and-environment-variable-issues/) (cheers !) to load them up. Create `~/.ssh/environment` and reput the export instructions, or you can even load your whole `/etc/profile` file, even though I have no idea what the security implications are. just don’t if you are ignorant like me.
+Hey, lucky you ! There’s a last step, and it’s so easy it feels good. By default, the SSH session opened by Capistrano doesn’t execute your init scripts (~/.profile, ~/.bashrc, not even /etc/profile/). These are [DanM instructions](https://pretheory.wordpress.com/2008/02/12/capistrano-path-and-environment-variable-issues/) (cheers !) to load them up. Create `~/.ssh/environment` and reput the export instructions, or you can even load your whole `/etc/profile` file, even though I have no idea what the security implications are. just don’t if you are ignorant like me.
 Tell your SSH server to load this file : add this line in `/etc/ssh/sshd_config` :
 
 ```
