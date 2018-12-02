@@ -2,7 +2,8 @@
 layout: post
 title: Designing state machines
 date: 2017-06-26
-categories: dev
+categories: en
+tags: dev
 ---
 
 This is a post I wrote while I was working at Drivy, as we were tweaking the models state machines. You can find it here : [https://drivy.engineering/designing-state-machines/](https://drivy.engineering/designing-state-machines/).

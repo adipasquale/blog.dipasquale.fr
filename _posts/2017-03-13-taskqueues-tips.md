@@ -2,7 +2,8 @@
 layout: post
 title: Taskqueues tips
 date: 2017-03-13
-categories: dev
+categories: en
+tags: dev
 ---
 
 I wrote a post listing a few tips to write a taskqueue while I was working at Drivy. You can find it here : [https://drivy.engineering/taskqueues-tips/](https://drivy.engineering/taskqueues-tips/).

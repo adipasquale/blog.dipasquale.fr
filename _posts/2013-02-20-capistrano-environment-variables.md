@@ -2,7 +2,8 @@
 layout: post
 title: Capsitrano Environment variables
 date: 2013-02-20
-categories: dev rails
+categories: en
+tags: dev rails
 ---
 
 This is the story of an epic fight. Me (regular guy) vs the server (Rails 3, deployed via Capistrano to a Passenger – Nginx hosted Ubuntu server, using Mandrill transactional mail service). not a fair fight.

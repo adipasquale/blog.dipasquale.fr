@@ -1,13 +1,12 @@
 ---
 layout: post
 title: Leave Gmail in 10 steps
-date: 2018-11-17 08:05
-categories:
+date: 2018-12-02
+categories: en
+tags: internet
+summary: In exchange for free mails, would you let your postman open your letters, read them, and insert ads related to their contents?
 ---
 
-# Blog post - 10 steps guide to leave Gmail
-
-![Photo by Mantas Hesthaven on Unsplash](https://i.imgur.com/s5D0I4D.jpg)
 
 > In exchange for free mails, would you let your postman open your letters, read them, and insert ads related to their contents?
 
@@ -16,6 +15,8 @@ This is a common analogy for Gmail's model. The privacy implications of using Gm
 Migrating away from any email service, like changing addresses in real world life, is always going to be tedious. I did not find that Gmail makes it particularly harder, but I hope this guide can help you.
 
 Disclaimer : This guide will not help you find alternatives for the Gmail-specific features, like labels, snoozing, bundles, suggested replies and so on.
+
+![Photo by Mantas Hesthaven on Unsplash](/images/leaving.unsplash.png)
 
 ## Step 1 : Get a new mail address and provider
 
