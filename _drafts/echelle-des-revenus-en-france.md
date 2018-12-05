@@ -89,3 +89,46 @@ J'ai alors sorti le nez du guidon, pour me rendre compte qu'il y avait un jeu de
 Le reste est un "jeu d'enfants" qui m'a quand même pris quelques heures pour me rappeler comment manipuler les DataFrame et le plotting.
 
 Vous pouvez trouver le code source du Notebook Jupyter sur [GitHub](https://github.com/adipasquale/france-income-disparities-2015), et aussi en lancer une version interactive avec Binder [en suivant ce lien](https://mybinder.org/v2/gh/adipasquale/france-income-disparities-2015/master?filepath=revenus%20disponibles%20france%20metropolitaine%20-%20deciles.ipynb).
+
+# Par région et par communes
+
+Dans les données disponibles, on a le détail à différentes échelles, dont l'échelle régionale et l'échelle communale.
+
+## Par région
+
+Voici ce que ça donne région par région :
+
+![Revenus disponibles mensuels par unité de consommation par région](/images/fr-revenues-regions-all.png)
+
+
+C'est un peu illisible, j'ai isolé de manière un peu arbitraire les extrêmes  :
+
+![Revenus disponibles mensuels par unité de consommation par région, seulement les extrêmes](/images/fr-revenues-regions-filtered.png)
+
+On voit des différences de répartition importantes et surtout des inégalités très marquées.
+
+## Au sein de Paris
+
+Ensuite, j'ai regardé à l'échelle des communes. On ne peut évidemment pas envisager de tracer le graphique pour les 36000 communes françaises et quelques, il faut donc faire des choix.
+
+J'ai d'abord regardé les différences entre les différents arrondissements de Paris. Avec 20 arrondissements, le graphique est illisible, le voici avec les 4 arrondissements ayant respectivement les 2 taux d'inégalités les plus forts et les plus faibles (mesurés par [l'indice de Gini](https://www.insee.fr/fr/metadonnees/definition/c1551)).
+
+![Revenus disponibles mensuels par unité de consommation par région](/images/fr-revenues-paris.png)
+
+Et non, ce n'est pas le 16ème qui a le plus haut taux d'inégalité, mais bien le 7ème ! (le 16ème est 3ème). Les différences sont extrèmement marquées avec les deux arrondissements à l'extrême opposé. On note que le 1er décile est quasiment identique : les ménages ayant le moins de revenu en ont à peu près autant dans le 7ème que dans le 20ème. Et on voit aussi de manière flagrante que **les ménages ayant le plus de revenus en ont environ 3 fois plus à Paris 7ème qu'à Paris 20ème**.
+
+## Par villes
+
+Enfin j'ai regardé les communes à l'échelle nationale. J'ai filtré les données pour voir les grandes villes uniquement, en utilisant cette règle : "nombre de personnes dans les ménages fiscaux supérieur à 100000".
+
+Voici un graphique représentant 5 villes choisies arbitrairement pour représenter la "palette" de répartition des revenus : Paris (taux d'inégalité le plus fort), Marseille, Brest (taux d'inégalité le plus faible), Toulouse et Lyon.
+
+![Revenus disponibles mensuels par unité de consommation par communes](/images/fr-revenues-cities.png)
+
+Là encore, on voit un schéma similaire, c'est à dire que les écarts se produisent principalement dans les déciles les plus hauts. Je pense que l'on peut lire cela comme ça : **"Les écarts dans la répartition des richesses dans les différentes grandes villes de France est principalement dû aux écarts des revenus des plus riches".**
+
+# Conclusion
+
+J'espère que comme moi vous avez appris des choses, et surtout que ça vous a donné envie d'en savoir plus. Je vous invite à visiter le site de [l'INSEE](https://www.insee.fr/) et celui de [Data Gouv](https://www.data.gouv.fr/) pour chercher des données intéressantes. J'ai plein d'idées pour d'autres analyses, notamment avec l'indice de Gini, si ça vous intéresse suivez moi sur Twitter : [@hypertextadrien](https://twitter.com/hypertextadrien).
+
+Et surtout n'hésitez pas à me contacter si vous avez des questions, ou si vous avez repéré des erreurs dans les manipulations de données ou dans mes interprétations !
