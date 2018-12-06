@@ -105,7 +105,7 @@ C'est un peu illisible, j'ai isolé de manière un peu arbitraire les extrêmes 
 
 ![Revenus disponibles mensuels par unité de consommation par région, seulement les extrêmes](/images/fr-revenues-regions-filtered.png)
 
-On voit des différences de répartition importantes et surtout des inégalités très marquées.
+On voit des différences de répartition importantes et surtout des inégalités de niveaux de vie très marquées.
 
 ## Au sein de Paris
 
@@ -117,7 +117,7 @@ J'ai d'abord regardé les différences entre les différents arrondissements de 
 
 Et non, ce n'est pas le 16ème qui a le plus haut taux d'inégalité, mais bien le 7ème ! (le 16ème est 3ème). Les différences sont extrèmement marquées avec les deux arrondissements à l'extrême opposé. On note que le 1er décile est quasiment identique : les ménages ayant le moins de revenu en ont à peu près autant dans le 7ème que dans le 20ème. Et on voit aussi de manière flagrante que **les ménages ayant le plus de revenus en ont environ 3 fois plus à Paris 7ème qu'à Paris 20ème**.
 
-## Par villes
+## Par ville
 
 Enfin j'ai regardé les communes à l'échelle nationale. J'ai filtré les données pour voir les grandes villes uniquement, en utilisant cette règle : "nombre de personnes dans les ménages fiscaux supérieur à 100000".
 
@@ -125,10 +125,10 @@ Voici un graphique représentant 5 villes choisies arbitrairement pour représen
 
 ![Revenus disponibles mensuels par unité de consommation par communes](/images/fr-revenues-cities.png)
 
-Là encore, on voit un schéma similaire, c'est à dire que les écarts se produisent principalement dans les déciles les plus hauts. Je pense que l'on peut lire cela comme ça : **"Les écarts dans la répartition des richesses dans les différentes grandes villes de France est principalement dû aux écarts des revenus des plus riches".**
+Là encore, on voit un schéma similaire, c'est-à-dire que les écarts se produisent principalement dans les déciles les plus hauts. Je pense que l'on peut lire cela comme ça : **"Les écarts de répartitions des richesses dans les grandes villes françaises se concentrent dans les classes les plus aisées".**
 
 # Conclusion
 
-J'espère que comme moi vous avez appris des choses, et surtout que ça vous a donné envie d'en savoir plus. Je vous invite à visiter le site de [l'INSEE](https://www.insee.fr/) et celui de [Data Gouv](https://www.data.gouv.fr/) pour chercher des données intéressantes. J'ai plein d'idées pour d'autres analyses, notamment avec l'indice de Gini, si ça vous intéresse suivez moi sur Twitter : [@hypertextadrien](https://twitter.com/hypertextadrien).
+J'espère que comme moi vous avez appris des choses, et surtout que ça vous a donné envie d'en savoir plus. Je vous invite à visiter le site de [l'INSEE](https://www.insee.fr/) et celui de [Data Gouv](https://www.data.gouv.fr/) pour chercher des données intéressantes. J'ai plein d'idées pour d'autres analyses, notamment avec l'indice de Gini, si ça vous intéresse suivez-moi sur Twitter : [@hypertextadrien](https://twitter.com/hypertextadrien).
 
 Et surtout n'hésitez pas à me contacter si vous avez des questions, ou si vous avez repéré des erreurs dans les manipulations de données ou dans mes interprétations !
