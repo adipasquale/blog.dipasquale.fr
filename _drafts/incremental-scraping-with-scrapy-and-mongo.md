@@ -14,7 +14,7 @@ If you don't know it, have a look at their [overview page](https://doc.scrapy.or
 
 We will also use MongoDB, the famous NoSQL DB, but it would be a similar process with any DB you want.
 
-**TLDR;** if you already know Scrapy, head to the last part. You can find the full code for this project [here on GitHub](https://github.com/adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb).
+**TLDR;** if you already know Scrapy, head to the [last part about incremental scraping](#incremental). You can find the full code for this project [here on GitHub](https://github.com/adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb).
 
 # Setup your Scrapy spider
 
@@ -37,6 +37,9 @@ scrapy genspider techcrunch techcrunch.com
 # Scrape the posts
 
 ## Play around in the shell
+
+First have a look at the DOM structure on [https://www.techcrunch.com](https://www.techcrunch.com), using your browser's developer tools.
+**Make sure to disable Javascript**, because the scraper won't execute it by default. It's doable with Scrapy, but it's not the point of this tutorial.
 
 You can open a Scrapy shell with
 
@@ -205,7 +208,7 @@ scrapy crawl techcrunch -a limit_pages=2 -o posts.json
 
 and Scrapy will generate a nice `posts.json` file with all the scraped items. Yay !
 
-# Incremental Scraping
+# <a name="incremental"></a>Incremental Scraping
 
 ## Store items in MongoDB
 
@@ -436,7 +439,7 @@ We now have a scraper that will do the least amount of work possible on each new
 You can find the full code for this project here on GitHub: [adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb](https://github.com/adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb).
 
 You can deploy your spider to [ScrapingHub cloud](https://scrapinghub.com/scrapy-cloud), and schedule it to run daily on their servers.
-I'm not affiliated to them, it's just an awesome product and their free plan already does a lot.
+I'm not affiliated to them in any way, it's just an awesome product and their free plan already does a lot.
 By the way, ScrapingHub is the main contributor to the fully open-source Scrapy project that we just used.
 
 To go further, you can implement a new `force_rescrape` argument, that will bypass our limit and force going through all the items again.
