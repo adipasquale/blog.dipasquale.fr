@@ -2,7 +2,7 @@
 title:       Adrien Di Pasquale Blog
 email:       adrien@dipasquale.fr
 author:      Adrien Di Pasquale
-description: "Mostly blogging about web development"
+description: "Mostly blogging about web development and Open Data"
 baseurl:     ""
 url:         "https://blog.dipasquale.fr"
 date_format: "%b %-d, %Y"
