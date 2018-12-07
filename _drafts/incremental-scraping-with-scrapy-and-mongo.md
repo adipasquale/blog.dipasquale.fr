@@ -2,7 +2,8 @@
 layout: post
 title: Incremental crawler with Scrapy and MongoDB
 date: 2018-12-05 20:40
-categories: en dev scraping
+categories: en
+tags: dev scraping
 ---
 
 In this post I'll show you how to scrape a website incrementally, meaning that each new scraping will only scrape the new items.

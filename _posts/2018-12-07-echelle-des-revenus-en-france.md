@@ -2,7 +2,8 @@
 layout: post
 title: Échelle des revenus en France
 date: 2018-12-07
-categories: fr opendata
+categories: fr
+tags: opendata
 ---
 
 Je me suis intéressé à tracer le graphique de l'échelle des revenus en France.
