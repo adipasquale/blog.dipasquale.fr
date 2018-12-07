@@ -1,11 +1,11 @@
 ---
 layout: post
 title: Échelle des revenus en France
-date: 2018-12-01 10:01
+date: 2018-12-07
 categories: fr opendata
 ---
 
-Je me suis intéressé à tracer l'échelle des revenus en France.
+Je me suis intéressé à tracer le graphique de l'échelle des revenus en France.
 L'idée est de pouvoir dire "si vous vivez avec tant d'argent, vous êtes mieux loti que X% des français".
 
 C'est une statistique qui m'intéresse particulièrement car elle est simple à comprendre et permet de prendre du recul.
@@ -33,7 +33,9 @@ Pour êtrer précis, il faut bien préciser les termes employés ici. Voici les 
 
 Donc, *en gros*, on parle ici de **l'argent effectivement disponible dans chaque famille divisé par le nombre de personnes de manière dégressive** (toutes sources confondues et après impôts).
 
-Aussi, les données utilisées proviennent d'[un dossier](https://www.insee.fr/fr/statistiques/3560118) de l'INSEE paru le 19/06/2018 analysant des données de 2015 (plus de détails ci-dessous).
+Les données utilisées proviennent de [ce dossier](https://www.insee.fr/fr/statistiques/3560118) de l'INSEE paru le 19/06/2018 analysant des données de 2015 (plus de détails ci-dessous).
+
+*Vous trouverez des graphiques à d'autres échelles géographiques à la [fin de l'article](#regions).*
 
 # Construction de l'analyse
 
@@ -90,7 +92,7 @@ Le reste est un "jeu d'enfants" qui m'a quand même pris quelques heures pour me
 
 Vous pouvez trouver le code source du Notebook Jupyter sur [GitHub](https://github.com/adipasquale/france-income-disparities-2015), et aussi en lancer une version interactive avec Binder [en suivant ce lien](https://mybinder.org/v2/gh/adipasquale/france-income-disparities-2015/master?filepath=revenus%20disponibles%20france%20metropolitaine%20-%20deciles.ipynb).
 
-# Par région et par communes
+# <a name="regions"></a>Par région et par commune
 
 Dans les données disponibles, on a le détail à différentes échelles, dont l'échelle régionale et l'échelle communale.
 
