@@ -111,3 +111,5 @@ I was very surprised how easy it was to stop using Google Chrome. The new Firefo
 The only Google apps I really could not stop using are Maps and Docs. They both have features I could not find anywhere else and which I don't want to stop using altogether.
 
 I hope this helps, let me know if you switch!
+
+*You can comment this article on [Hacker News](https://news.ycombinator.com/item?id=18627509)*
