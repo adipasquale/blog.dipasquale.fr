@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Incremental Scraping With Scrapy and MongoDB
+title: Incremental crawler with Scrapy and MongoDB
 date: 2018-12-05 20:40
 categories: en dev scraping
 ---
@@ -39,9 +39,13 @@ scrapy genspider techcrunch techcrunch.com
 ## Play around in the shell
 
 First have a look at the DOM structure on [https://www.techcrunch.com](https://www.techcrunch.com), using your browser's developer tools.
-**Make sure to disable Javascript**, because the scraper won't execute it by default. It's doable with Scrapy, but it's not the point of this tutorial.
 
-You can open a Scrapy shell with
+**Make sure to disable Javascript**, because the scraper won't execute it by default. It's doable with Scrapy, but it's not the point of this tutorial. I'm using [this extension](https://addons.mozilla.org/en-US/firefox/addon/javascript-toggler/) to easily disable JS on Firefox.
+
+![inspection of Techcrunch's DOM in Firefox](/images/techcrunch-inspect.png)
+
+
+You can then open a Scrapy shell with
 
 ```
 scrapy shell https://www.techcrunch.com
@@ -135,22 +139,27 @@ scrapy crawl techcrunch -a limit_pages=2
 ## Scrape the post pages
 
 So far, we've left the `scrape_post` request empty, so our spider is not actually scraping anything.
+Here is what post pages look like (again, without JS) :
 
-Before writing it, we need to declare the items we're going to scrape :
+![a Techcrunch post page](/images/techcrunch-post.png)
+
+Before writing the scraper method, we need to declare the items we're going to scrape :
 
 ```py
 # items.py
 
 class BlogPost(scrapy.Item):
+    url = scrapy.Field()
     title = scrapy.Field()
     author = scrapy.Field()
     content = scrapy.Field()
     published_at = scrapy.Field()
 ```
 
-*Note : There is now a simple way to have a flexible schema, without declaring all fields, which I will go into in a next article*
+*Note : There is now a [simple way](https://stackoverflow.com/a/5077350) to have a dynamic schema and avoid declaring all the fields. I will show how to use it in a next article*
 
-You can open a new Scrapy shell to play around on any post page and figure out the selectors you're going to use. For example :
+You can open a new Scrapy shell to play around on any post page and figure out the selectors you're going to use.
+For example :
 
 ```sh
 scrapy shell https://techcrunch.com/2017/05/01/awesomeness-is-launching-a-news-division-aimed-at-gen-z/
@@ -173,7 +182,8 @@ class TechcrunchSpider(scrapy.Spider):
             title=response.css("h1::text").extract_first(),
             author=response.css(".article__byline>a::text").extract_first().strip(),
             published_at=self.extract_post_date(response),
-            content=self.extract_content(response)
+            content=self.extract_content(response),
+            url=response.url
         )
         yield(item)
 
@@ -195,10 +205,11 @@ class TechcrunchSpider(scrapy.Spider):
 So what's going here ?
 
 - We instanciate a `BlogPost` item that we then yield, that's the Scrapy way.
-- Some of its' fields are straightforward, so we write the selector inline, some are more complicated so we extracted them out
+- Most of the fields are straightforward, so we write their selectors inline, some others are more complicated so we extracted them out.
 - The `published_at` field is a bit tricky because in the page visible DOM there is no plain text datetime, only a vague 'X hours/days ago'.
 If you inspect the DOM closely, you'll find this meta `sailthru.date` that's easy to use and parse.
-- The `content` field is quite involved, but it's really not key to this article's point. We're basically joining the texts from the different paragraphs in a way that's human readable. Because the content is actually HTML, we're losing some infos in the process, like the links and images.
+- The `content` field is quite involved, but it's really not key to this article's point. We're basically joining the texts from the different paragraphs in a way that's human readable.
+Because the content is actually HTML, we're losing some infos in the process, like the links and images.
 
 You can now run the spider with  :
 
@@ -283,7 +294,7 @@ You can now re-run the spider :
 scrapy crawl techcrunch -a limit_pages=2
 ```
 
-And open a mongo shell to check that the items were inserted :
+Feel free to open a mongo shell and check that the items were indeed inserted :
 
 ```sh
 mongo localhost/tc_scraper
@@ -317,7 +328,8 @@ Let's change the Pipeline so that it does not insert a new post each time, but r
         return item
 ```
 
-Here we are using the url as the key, because unfortunately there does not seem to be a more canonical ID in the DOM. It should work as long as Techcrunch does not change their posts slugs or published dates often.
+Here we are using the url as the key, because unfortunately there does not seem to be a more canonical ID in the DOM.
+It should work as long as Techcrunch does not change their posts slugs or published dates often.
 
 You can drop all items and re-run the spider twice :
 
@@ -333,11 +345,11 @@ You should now have only 40 items in the database.
 ## Limit crawls to new items
 
 So far our solution is almost complete, but it will re-scrape all items every time you start it.
-In this step, we'll make sure that we don't re-scrape items uselessly, in order to have faster scraping sessions, and to limit our requests to the website.
+In this step, we will make sure that we don't re-scrape items uselessly, in order to have faster scraping sessions, and to limit our requests to the website.
 
 What we will do is to update the spider so that it prevents requests to items that were already scraped before and are in the database.
 
-First we'll extract the MongoDB connection logic from the Pipeline in order to re-use it in the spider :
+First let's extract the MongoDB connection logic from the pipeline in order to re-use it in the spider :
 
 ```py
 # mongo_provider.py
@@ -360,7 +372,7 @@ class MongoProvider(object):
         self.client.close()
 ```
 
-and in the pipelines :
+and update the pipeline accordingly :
 
 ```py
 # pipelines.py
@@ -389,7 +401,7 @@ class MongoPipeline(object):
     ...
 ```
 
-and now we can update the spider :
+We can now update the spider :
 
 ```py
 # spiders/techcrunch.com
@@ -429,7 +441,7 @@ Here is a quick breakdown of what we are doing here :
 We query Mongo for the last scraped object and store it's url. Here we are sorting the posts on the `published_at` descendingly, we made sure that this is consistent with Techcrunch's sorting, or else our algorithm would not work properly.
 - In the parsing loop, we break and stop the scraping as soon as we reach a post with this url.
 
-You can now perform a few tests, drop a few of the last items from mongo and re-scrape, you'll see that it only scrapes a few items and stops !
+You can now perform a few tests, drop some of the last items from MongoDB and re-scrape, you'll see that it only scrapes a few items and stops !
 
 
 # Conclusion
