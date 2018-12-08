@@ -21,7 +21,7 @@ Avant toute chose, voici le résultat de mes analyses :
 De manière simplificatrice, on peut lire ce graphique comme cela : **"si vous vivez avec 2500 euros par mois, vous êtes mieux loti que 80% des français"**.
 *Note : c'est un langage approximatif*.
 
-Pour êtrer précis, il faut bien préciser les termes employés ici. Voici les définitions de l'INSEE :
+Pour être précis, il faut bien préciser les termes employés ici. Voici les définitions de l'INSEE :
 
 > Le [revenu disponible](https://www.insee.fr/fr/metadonnees/definition/c1458) d'un ménage comprend les revenus d'activité (nets des cotisations sociales), les revenus du patrimoine, les transferts en provenance d'autres ménages et les prestations sociales (y compris les pensions de retraite et les indemnités de chômage), nets des impôts directs.
 
