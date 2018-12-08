@@ -12,6 +12,8 @@ summary: In exchange for free mails, would you let your postman open your letter
 
 This is a common analogy for Gmail's model. The privacy implications of using Gmail actually go much farther than that, because Gmail is not only your postman (with Gmail), it also owns your car ( your web browser), your address book (with Search), your TV (with YouTube), it's a great land owner (with AdSense)… And there are many reasons not to trust Google, [especially with your privacy](http://precursorblog.com/?q=content/googles-top-35-privacy-scandals).
 
+**Important edit**: As many commenters pointed out, this analogy is actually not correct anymore, as [Google stopped reading your emails for ad-personalization](https://techcentral.co.za/google-will-stop-reading-e-mail/75215/) in 2017, sorry I missed that news. However, they [do still read](https://theoutline.com/post/4524/remember-when-google-said-it-would-stop-reading-your-email) them in order to "customize search results, better detect spam and malware".
+
 Migrating away from any email service, like changing addresses in real world life, is always going to be tedious. I did not find that Gmail makes it particularly harder, but I hope this guide can help you.
 
 Disclaimer : This guide will not help you find alternatives for the Gmail-specific features, like labels, snoozing, bundles, suggested replies and so on.
@@ -23,6 +25,8 @@ Disclaimer : This guide will not help you find alternatives for the Gmail-specif
 First, I strongly suggest you buy a domain name, so that you really own your mail address, and don't depend on any service. You can purchase one at [Gandi](https://www.gandi.net/).
 
 From there on, you could use Gandi's mail servers, but I recommend you use [Fastmail's](https://fastmail.com/). It's not free, but it will be much simpler to setup, faster, they provide push notifications for mobile, their spam filter is better, their web interface is better, and it's the most popular privacy-respecting service.
+
+**Edit**: I am not affiliated to Fastmail in any way, and I do not want this article to look like an ad! Also, as [HN commenters](https://news.ycombinator.com/item?id=18633216) and [@mediafinger](https://twitter.com/mediafinger/status/1071325185364672513) pointed out, Fastmail is an Australian company, where they just passed [a new bill](https://www.nytimes.com/2018/12/06/world/australia/encryption-bill-nauru.html), which is concerning for privacy. Have a look at other privacy-caring providers like [mailbox.org](https://mailbox.org/), [runbox.com](https://runbox.com/),[posteo.de](https://posteo.de/) and [startmail.com](https://www.startmail.com/), they may very well be cheaper too.
 
 [Signing up with Fastmail](https://www.fastmail.com/signup/) is very simple. If you bought a domain name, you can use their [easy-setup option](https://www.fastmail.com/help/receive/domains-setup-nsmx.html) where you use their name servers and they do all the hardlifting. You will still be able to add custom DNS entries later if you want to, for your personal website or blog. If you did not buy a domain name, you can also create a mail address ending with one of theirs : sent.com, fastmail.com…
 
