@@ -6,8 +6,9 @@ categories: en
 tags: dev scraping
 ---
 
-In this post I'll show you how to scrape a website incrementally, meaning that each new scraping will only scrape the new items.
-We will be crawling [Techcrunch blog posts](https://techcrunch.com/) as an illustration here.
+In this post I will show you how to scrape a website incrementally.
+Each new scraping session will only scrape new items.
+We will be crawling [Techcrunch blog posts](https://techcrunch.com/) as an example here.
 
 This tutorial will use Scrapy, a great Python scraping library.
 It's simple yet very powerful.
@@ -25,9 +26,9 @@ Start by installing Scrapy
 pip3 install scrapy
 ```
 
-*(use a [virtualenv](https://virtualenv.pypa.io/en/latest/) and a `requirements.txt` file in real projects)*
+*(in a real project, you would use a [virtualenv](https://virtualenv.pypa.io/en/latest/) and a `requirements.txt` file)*
 
-and initialize your project with :
+and initialize your project with:
 
 ```
 scrapy startproject tc_scraper
@@ -41,7 +42,9 @@ scrapy genspider techcrunch techcrunch.com
 
 First have a look at the DOM structure on [https://www.techcrunch.com](https://www.techcrunch.com), using your browser's developer tools.
 
-**Make sure to disable Javascript**, because the scraper won't execute it by default. It's doable with Scrapy, but it's not the point of this tutorial. I'm using [this extension](https://addons.mozilla.org/en-US/firefox/addon/javascript-toggler/) to easily disable JS on Firefox.
+**Make sure to disable Javascript**, because the scraper won't execute it by default.
+It's doable with Scrapy, but it's not the point of this tutorial.
+I'm using [this extension](https://addons.mozilla.org/en-US/firefox/addon/javascript-toggler/) to easily disable JS on Firefox.
 
 ![inspection of Techcrunch's DOM in Firefox](/images/techcrunch-inspect.png)
 
@@ -52,7 +55,7 @@ You can then open a Scrapy shell with
 scrapy shell https://www.techcrunch.com
 ```
 
-This shell is very helpful to play around and figure out how to extract the data. Here are some commands you can try one by one :
+This shell is very helpful to play around and figure out how to extract the data. Here are some commands you can try one by one:
 
 ```py
 response.css(".post-block")
@@ -60,16 +63,37 @@ posts = response.css(".post-block")
 posts[0]
 posts[0].css(".post-block__title__link")
 title = posts[0].css(".post-block__title__link")
+title
 title.css("::attr(href)").extract()
 title.css("::attr(href)").extract_first()
 ```
 
+We are using CSS selectors, and the `attr` function on CSS3 pseudo-elements.
+Learn more about this extraction part in the [scrapy docs](https://doc.scrapy.org/en/latest/topics/selectors.html).
+
+## Scrapy architecture
+
+![scrapy architecture](/images/scrapy_architecture.png)
+
+This diagram  from [scrapy docs](https://doc.scrapy.org/en/0.10.3/topics/architecture.html) is a quick overview of how Scrapy works:
+- The Spider yields Requests, which are sent to the Scheduler.
+- The Scheduler sends Requests to the Downloader, which executes them against the distant website.
+- The Responses are sent to the Spider for parsing.
+- The Spider parses and yields Items, which are sent to the Item Pipeline.
+- The Item Pipeline is responsible for processing them and storing them.
+
+In this tutorial, we won't touch the Scheduler, nor the Downloader.
+We will write a Spider, and tweak the Item Pipeline.
+
 ## Scrape the list pages
 
-So let's write the first part of the scraper :
+So let's write the first part of the scraper:
 
 ```py
 # spiders/techcrunch.py
+
+import scrapy
+
 
 class TechcrunchSpider(scrapy.Spider):
     name = 'techcrunch'
@@ -89,19 +113,23 @@ class TechcrunchSpider(scrapy.Spider):
         pass
 ```
 
-Here is a walkthrough of this spider :
+Here is a walkthrough of this spider:
 
-- start by scraping the root https://techcrunch.com/
-- goes through all posts blocks, extracts the link, and enqueues a new request. This new request will use a different callback from the default one : `parse_post`
-- after going through all the posts, it looks for a next page link, and if it finds it, it enqueues a new request with that link. This request will use the default callback `parse`
+- It starts by scraping the start url https://techcrunch.com/
+- It goes through all posts blocks, extracts the link, and enqueues a new request.
+This new request will use a different callback from the default one: `parse_post`
+- After going through all the posts, it looks for a next page link, and if it finds it, it enqueues a new request with that link.
+This request will use the default callback `parse`
 
-You can run it with `scrapy crawl techcrunch`, but be aware that it will go through ALL the pages (thousands), so be ready to hit `CTRL+C` to stop it !
+You can run it with `scrapy crawl techcrunch`, but be aware that it will go through ALL the pages (thousands here), so be ready to hit `CTRL+C` to stop it!
 
 ## Add a pages limit argument
 
-In order to avoid this problem, let's add a pages limit argument to our spider right now :
+In order to avoid this problem, let's add a pages limit argument to our spider right now:
 
 ```py
+# spiders/techcrunch.py
+
 import scrapy
 import re
 
@@ -131,7 +159,7 @@ class TechcrunchSpider(scrapy.Spider):
 In the constructor, we allow passing a new kwarg called limit_pages, which we cast to an integer.
 In the `parse` method, we extract the next page number thanks to a regex on the url. Then we compare it to the `limit_pages` argument, and only if it's below, we enqueue the next page request.
 
-You can now run the spider safely with :
+You can now run the spider safely with:
 
 ```sh
 scrapy crawl techcrunch -a limit_pages=2
@@ -139,15 +167,16 @@ scrapy crawl techcrunch -a limit_pages=2
 
 ## Scrape the post pages
 
-So far, we've left the `scrape_post` request empty, so our spider is not actually scraping anything.
-Here is what post pages look like (again, without JS) :
+So far, we have left the `scrape_post` request empty, so our spider is not actually scraping anything.
+Here is what post pages look like (again, without JS):
 
 ![a Techcrunch post page](/images/techcrunch-post.png)
 
-Before writing the scraper method, we need to declare the items we're going to scrape :
+Before writing the scraper method, we need to declare the items that we are going to scrape:
 
 ```py
 # items.py
+import scrapy
 
 class BlogPost(scrapy.Item):
     url = scrapy.Field()
@@ -157,22 +186,24 @@ class BlogPost(scrapy.Item):
     published_at = scrapy.Field()
 ```
 
-*Note : There is now a [simple way](https://stackoverflow.com/a/5077350) to have a dynamic schema and avoid declaring all the fields. I will show how to use it in a next article*
+*Note: There is now a [simple way](https://stackoverflow.com/a/5077350) to have a dynamic schema without manually declaring all the fields.
+I will show how to use it in a next article*
 
-You can open a new Scrapy shell to play around on any post page and figure out the selectors you're going to use.
-For example :
+You can open a new Scrapy shell to play around on any post page and figure out the selectors you are going to use.
+For example:
 
 ```sh
 scrapy shell https://techcrunch.com/2017/05/01/awesomeness-is-launching-a-news-division-aimed-at-gen-z/
 ```
 
-And once you've figured them out, you can write the scraper :
+And once you have figured them out, you can write the scraper's missing method:
 
 ```py
 # spiders/techcrunch.py
 
 from tc_scraper.items import BlogPost
-from dateutil import parser
+import datetime
+
 
 class TechcrunchSpider(scrapy.Spider):
 
@@ -189,8 +220,8 @@ class TechcrunchSpider(scrapy.Spider):
         yield(item)
 
     def extract_post_date(self, response):
-        date_text = response.css("meta[name='sailthru.date']::attr(content)")
-        return parser.parse(date_text.extract_first())
+        date_text = response.css("meta[name='sailthru.date']::attr(content)").extract_first()
+        return datetime.datetime.strptime(date_text, "%Y-%m-%d %H:%M:%S" )
 
     def extract_content(self, response):
         paragraphs_texts = [
@@ -203,22 +234,26 @@ class TechcrunchSpider(scrapy.Spider):
         return "\n\n".join(paragraphs)
 ```
 
-So what's going here ?
+So what's going here?
 
 - We instanciate a `BlogPost` item that we then yield, that's the Scrapy way.
-- Most of the fields are straightforward, so we write their selectors inline, some others are more complicated so we extracted them out.
-- The `published_at` field is a bit tricky because in the page visible DOM there is no plain text datetime, only a vague 'X hours/days ago'.
-If you inspect the DOM closely, you'll find this meta `sailthru.date` that's easy to use and parse.
-- The `content` field is quite involved, but it's really not key to this article's point. We're basically joining the texts from the different paragraphs in a way that's human readable.
-Because the content is actually HTML, we're losing some infos in the process, like the links and images.
+- Most of the fields are straightforward, so we write their selectors inline.
+Some others are more complicated so we have extracted them to independent methods.
+- The `published_at` field is a bit tricky because in the visible DOM there is no plain text datetime, only a vague 'X hours/days ago'.
+If you inspect the DOM closely, you will find this meta `sailthru.date` that is easy to use and parse.
+- The `extract_content` method is quite involved, but it's really not key to this article's objective.
+We are basically joining the texts from the different paragraphs in a way that's human readable.
+Because the content is actually HTML, we are losing some infos in the process, like the links and images.
 
-You can now run the spider with  :
+You can now run the spider with:
 
 ```sh
 scrapy crawl techcrunch -a limit_pages=2 -o posts.json
 ```
 
-and Scrapy will generate a nice `posts.json` file with all the scraped items. Yay !
+and Scrapy will generate a nice `posts.json` file with all the scraped items. Yay!
+
+![display posts.json contents](/images/cat_posts_json.png)
 
 # <a name="incremental"></a>Incremental Scraping
 
@@ -226,25 +261,24 @@ and Scrapy will generate a nice `posts.json` file with all the scraped items. Ya
 
 So in the last step we exported the items to a JSON file.
 For long term storage and re-use, it's more convenient to use a database.
-We'll use MongoDB here, but you could use a regular SQL database too.
-I personally find it convenient on scraping projects to use a NoSQL database because of the frequent schema changes, especially as you're write the scraper initally.
+We will use MongoDB here, but you could use a regular SQL database too.
+I personally find it convenient on scraping projects to use a NoSQL database because of the frequent schema changes, especially as you initially iterate on the scraper.
 
-If you're on Mac OS X, these commands will install MongoDB server, start it and create a database :
+If you are on Mac OS X, these commands will install MongoDB server and start it as a service:
 
 ```sh
 brew install mongodb
 brew services start mongodb
-mongo
-> use tc_scraper
 ```
 
-We're going to create a Scrapy pipeline so that each yielded item will get written to MongoDB.
+We are going to create a Scrapy pipeline so that each yielded item will get saved to MongoDB.
 This process is well documented in [Scrapy's docs](https://doc.scrapy.org/en/latest/topics/item-pipeline.html?highlight=mongo#write-items-to-mongodb).
 
 ```py
 # pipelines.py
 
 import pymongo
+
 
 class MongoPipeline(object):
 
@@ -273,7 +307,7 @@ class MongoPipeline(object):
         return item
 ```
 
-and activate it in the settings :
+and activate it in the settings:
 
 ```py
 # settings.py
@@ -283,19 +317,19 @@ ITEM_PIPELINES = {
 }
 ```
 
-Last step is to install the new `pymongo` dependency :
+Last step is to install the new `pymongo` dependency:
 
 ```sh
 pip3 install pymongo
 ```
 
-You can now re-run the spider :
+You can now re-run the spider:
 
 ```
 scrapy crawl techcrunch -a limit_pages=2
 ```
 
-Feel free to open a mongo shell and check that the items were indeed inserted :
+Feel free to open a mongo shell and check that the items were indeed inserted:
 
 ```sh
 mongo localhost/tc_scraper
@@ -303,9 +337,9 @@ mongo localhost/tc_scraper
 40
 > db.tc_posts.findOne()
 {
-	"_id" : ObjectId("5c09294a7fa9c70f84e43322"),
-	"url" : "https://techcrunch.com/2018/12/06/looker-looks-to-future-with-103m-investment-on-1-6b-valuation/",
-	"author" : "Ron Miller",
+	"_id": ObjectId("5c09294a7fa9c70f84e43322"),
+	"url": "https://techcrunch.com/2018/12/06/looker-looks-to-future-with-103m-investment-on-1-6b-valuation/",
+	"author": "Ron Miller",
 
   ...
 ```
@@ -313,7 +347,7 @@ mongo localhost/tc_scraper
 ## Update existing items
 
 If you run the spider again, you will notice that you now have 80 items in your database.
-Let's change the Pipeline so that it does not insert a new post each time, but rather updates the existing one if it already exists.
+Let's update the Pipeline so that it does not insert a new post each time, but rather updates the existing one if it already exists.
 
 ```py
 # pipelines.py
@@ -332,7 +366,7 @@ Let's change the Pipeline so that it does not insert a new post each time, but r
 Here we are using the url as the key, because unfortunately there does not seem to be a more canonical ID in the DOM.
 It should work as long as Techcrunch does not change their posts slugs or published dates often.
 
-You can drop all items and re-run the spider twice :
+You can drop all items and re-run the spider twice:
 
 ```sh
 echo "db.tc_posts.drop();" | mongo localhost/tc_scraper
@@ -343,19 +377,23 @@ echo "db.tc_posts.count();" | mongo localhost/tc_scraper
 
 You should now have only 40 items in the database.
 
+*Note: If you are scared about running so many requests against Techcrunch.com, be aware that by default, Scrapy will use a [cache](https://doc.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.httpcache).
+For most requests, it will not re-run them every single time, but instead re-use the previous response*
+
 ## Limit crawls to new items
 
 So far our solution is almost complete, but it will re-scrape all items every time you start it.
-In this step, we will make sure that we don't re-scrape items uselessly, in order to have faster scraping sessions, and to limit our requests to the website.
+In this step, we will make sure that we don't re-scrape items uselessly, in order to have faster scraping sessions, and to limit our requests rate to the website.
 
 What we will do is to update the spider so that it prevents requests to items that were already scraped before and are in the database.
 
-First let's extract the MongoDB connection logic from the pipeline in order to re-use it in the spider :
+First let's extract the MongoDB connection logic from the pipeline in order to re-use it in the spider:
 
 ```py
-# mongo_provider.py
+# mongo_provider.py (new file)
 
 import pymongo
+
 
 class MongoProvider(object):
 
@@ -373,7 +411,7 @@ class MongoProvider(object):
         self.client.close()
 ```
 
-and update the pipeline accordingly :
+and update the pipeline accordingly:
 
 ```py
 # pipelines.py
@@ -399,15 +437,25 @@ class MongoPipeline(object):
     def close_spider(self, spider):
         self.mongo_provider.close_connection()
 
-    ...
+    def process_item(self, item, spider):
+        self.collection.find_one_and_update(
+            {"url": item["url"]},
+            {"$set": dict(item)},
+            upsert=True
+        )
+        return item
 ```
 
-We can now update the spider :
+*You can re-run the scraper at this checkpoint, nothing should have changed*
+
+We can now update the spider so that it uses this mongo provider:
 
 ```py
-# spiders/techcrunch.com
+# spiders/techcrunch.py
 
+...
 from tc_scraper.mongo_provider import MongoProvider
+
 
 class TechcrunchSpider(scrapy.Spider):
     ...
@@ -433,21 +481,33 @@ class TechcrunchSpider(scrapy.Spider):
             if url == self.last_scraped_url:
                 print("reached last item scraped, breaking loop")
                 return
+            else:
+                yield scrapy.Request(url, callback=self.parse_post)
 ```
 
-Here is a quick breakdown of what we are doing here :
+Here is a quick breakdown of what we are doing here:
 
-- In order to use the spider's settings that contain the mongo credentials, we need to do override this `from_crawler` method (I agree it's slightly annoying).
+- In order to use the spider's settings that contain the mongo credentials, we need to do override this `from_crawler` method. It's quite verbose, and not very intuitive. I agree it's annoying.
 - We then use these settings in the constructor to initialize a MongoDB connection thanks to our new `MongoProvider` class.
-We query Mongo for the last scraped object and store it's url. Here we are sorting the posts on the `published_at` descendingly, we made sure that this is consistent with Techcrunch's sorting, or else our algorithm would not work properly.
+- We query Mongo for the last scraped item and store it's url.
+Here we are sorting the posts on the `published_at` descendingly, we made sure that this is consistent with Techcrunch's sorting, or else our algorithm would not work properly.
 - In the parsing loop, we break and stop the scraping as soon as we reach a post with this url.
+We do it by preventing yielding the request, and breaking from the loop.
 
-You can now perform a few tests, drop some of the last items from MongoDB and re-scrape, you'll see that it only scrapes a few items and stops !
+You can now perform a few tests, drop some of the last items from MongoDB and re-scrape, you will see that it only scrapes the missing items and stops. Success!
+
+```sh
+mongo localhost/tc_scraper
+> last_id = db.tc_posts.find().sort({published_at: -1})[0]
+> db.tc_posts.remove({_id: last_item["_id"]})
+> exit
+scrapy crawl techcrunch -a limit_pages=2
+```
 
 
 # Conclusion
 
-We now have a scraper that will do the least amount of work possible on each new run. I hope you enjoyed this tutorial, and that this gave you new ideas for scraping projects !
+We now have a scraper that will do the least amount of work possible on each new run. I hope you enjoyed this tutorial, and that this gave you new ideas for scraping projects!
 
 You can find the full code for this project here on GitHub: [adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb](https://github.com/adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb).
 
@@ -457,3 +517,5 @@ By the way, ScrapingHub is the main contributor to the fully open-source Scrapy 
 
 To go further, you can implement a new `force_rescrape` argument, that will bypass our limit and force going through all the items again.
 This could be useful if you update the `scrape_post` method, or if Techcrunch changes their DOM structure.
+
+Let me know if you use this technique in one of your projects!
