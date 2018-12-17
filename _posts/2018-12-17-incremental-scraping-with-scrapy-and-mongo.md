@@ -1,7 +1,7 @@
 ---
 layout: post
 title: Incremental crawler with Scrapy and MongoDB
-date: 2018-12-05 20:40
+date: 2018-12-17
 categories: en
 tags: dev scraping
 ---
@@ -22,7 +22,7 @@ We will also use MongoDB, the famous NoSQL DB, but it would be a similar process
 
 Start by installing Scrapy
 
-```
+```sh
 pip3 install scrapy
 ```
 
@@ -30,7 +30,7 @@ pip3 install scrapy
 
 and initialize your project with:
 
-```
+```sh
 scrapy startproject tc_scraper
 cd tc_scraper
 scrapy genspider techcrunch techcrunch.com
@@ -42,7 +42,7 @@ scrapy genspider techcrunch techcrunch.com
 
 First have a look at the DOM structure on [https://www.techcrunch.com](https://www.techcrunch.com), using your browser's developer tools.
 
-**Make sure to disable Javascript**, because the scraper won't execute it by default.
+**Make sure to disable Javascript**, because the scraper will not execute it by default.
 It's doable with Scrapy, but it's not the point of this tutorial.
 I'm using [this extension](https://addons.mozilla.org/en-US/firefox/addon/javascript-toggler/) to easily disable JS on Firefox.
 
@@ -51,7 +51,7 @@ I'm using [this extension](https://addons.mozilla.org/en-US/firefox/addon/javasc
 
 You can then open a Scrapy shell with
 
-```
+```sh
 scrapy shell https://www.techcrunch.com
 ```
 
@@ -76,14 +76,15 @@ Learn more about this extraction part in the [scrapy docs](https://doc.scrapy.or
 ![scrapy architecture](/images/scrapy_architecture.png)
 
 This diagram  from [scrapy docs](https://doc.scrapy.org/en/0.10.3/topics/architecture.html) is a quick overview of how Scrapy works:
-- The Spider yields Requests, which are sent to the Scheduler.
-- The Scheduler sends Requests to the Downloader, which executes them against the distant website.
-- The Responses are sent to the Spider for parsing.
-- The Spider parses and yields Items, which are sent to the Item Pipeline.
-- The Item Pipeline is responsible for processing them and storing them.
+- The <span style="color:#DC2300;">Spider</span> yields <span style="color:#8AAF59">Requests</span>, which are sent to the <span style="color:#CCCCFF">Scheduler</span>.
+- The <span style="color:#CCCCFF">Scheduler</span> sends <span style="color:#8AAF59">Requests</span> to the <span style="color:#E6E64C">Downloader</span>, which executes them against the distant website.
+- The <span style="color:#8AAF59">Responses</span> are sent to the <span style="color:#DC2300;">Spider</span> for parsing.
+- The <span style="color:#DC2300;">Spider</span> parses and yields Items, which are sent to the <span style="color:#FF9966">Item Pipeline</span>.
+- The <span style="color:#FF9966">Item Pipeline</span> is responsible for processing them and storing them.
 
-In this tutorial, we won't touch the Scheduler, nor the Downloader.
-We will write a Spider, and tweak the Item Pipeline.
+In this tutorial, we will not touch the <span style="color:#CCCCFF">Scheduler</span>, nor the <span style="color:#E6E64C">Downloader</span>.
+
+We will only write a <span style="color:#DC2300;">Spider</span> and tweak the <span style="color:#FF9966">Item Pipeline</span>.
 
 ## Scrape the list pages
 
