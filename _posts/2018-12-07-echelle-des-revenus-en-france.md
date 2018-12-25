@@ -4,7 +4,11 @@ title: Échelle des revenus en France
 date: 2018-12-07
 categories: fr
 tags: opendata
+summary: Je me suis intéressé à tracer le graphique de l'échelle des revenus en France. L'idée est de pouvoir dire "si vous vivez avec tant d'argent, vous êtes mieux loti que X% des français".
 ---
+
+- Édité le 25/12/2018 : [*remarques de @Paul_Puget sur les interprétations*](https://github.com/adipasquale/blog.dipasquale.fr/commit/4b3ca1f50debad7aa1d71d3bcbe7c9dd1197ba51)
+
 
 Je me suis intéressé à tracer le graphique de l'échelle des revenus en France.
 L'idée est de pouvoir dire "si vous vivez avec tant d'argent, vous êtes mieux loti que X% des français".
