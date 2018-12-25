@@ -461,13 +461,10 @@ from tc_scraper.mongo_provider import MongoProvider
 class TechcrunchSpider(scrapy.Spider):
     ...
     @classmethod
-    def from_crawler(cls, crawler, **kwargs):
-        settings = crawler.settings
-        return cls(
-            mongo_uri=settings.get('MONGO_URI'),
-            mongo_database=settings.get('MONGO_DATABASE'),
-            **kwargs
-        )
+    def from_crawler(cls, crawler, *args, **kwargs):
+        kwargs['mongo_uri'] = crawler.settings.get("MONGO_URI")
+        kwargs['mongo_database'] = crawler.settings.get('MONGO_DATABASE')
+        return super(TechcrunchSpider, cls).from_crawler(crawler, *args, **kwargs)
 
     def __init__(self, limit_pages=None, mongo_uri=None, mongo_database=None, *args, **kwargs):
         ...
@@ -499,7 +496,7 @@ You can now perform a few tests, drop some of the last items from MongoDB and re
 
 ```sh
 mongo localhost/tc_scraper
-> last_id = db.tc_posts.find().sort({published_at: -1})[0]
+> last_item = db.tc_posts.find().sort({published_at: -1})[0]
 > db.tc_posts.remove({_id: last_item["_id"]})
 > exit
 scrapy crawl techcrunch -a limit_pages=2
@@ -520,3 +517,5 @@ To go further, you can implement a new `force_rescrape` argument, that will bypa
 This could be useful if you update the `scrape_post` method, or if Techcrunch changes their DOM structure.
 
 Let me know if you use this technique in one of your projects!
+
+[Discuss on Hacker News](https://news.ycombinator.com/item?id=18697956)
