@@ -6,6 +6,8 @@ categories: en
 tags: dev scraping
 ---
 
+- updated on 25/12/2018 : [*fixed from_crawler method overriding*](https://github.com/adipasquale/blog.dipasquale.fr/commit/8d2b191e1a1a7151c6b01b088d9c98812376aec1)
+
 In this post I will show you how to scrape a website incrementally.
 Each new scraping session will only scrape new items.
 We will be crawling [Techcrunch blog posts](https://techcrunch.com/) as an example here.
