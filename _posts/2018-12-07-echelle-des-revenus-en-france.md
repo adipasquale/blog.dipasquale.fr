@@ -120,6 +120,8 @@ J'ai d'abord regardé les différences entre les différents arrondissements de 
 
 Et non, ce n'est pas le 16ème qui a le plus haut taux d'inégalité, mais bien le 7ème ! (le 16ème est 3ème). Les différences sont extrèmement marquées avec les deux arrondissements à l'extrême opposé. On note que le 1er décile est quasiment identique : les ménages ayant le moins de revenu en ont à peu près autant dans le 7ème que dans le 20ème. Et on voit aussi de manière flagrante que **les ménages ayant le plus de revenus en ont environ 3 fois plus à Paris 7ème qu'à Paris 20ème**.
 
+**Mise à jour**: [@Paul_Puget](https://twitter.com/Paul_Puget) m'a fait remarquer que mon interprétation est erronée. On peut effectivement lire que le dernier décile est environ trois fois plus élevé. On ne peut cependant pas en tirer de conclusions sur les revenus moyens de ces 10% de gens les plus riches. Il n'est pas impossible que le revenu moyen dans ce dernier décile soit plus élevé dans le 20ème que dans le 7ème, cf [ce petit schéma à la main](https://imgur.com/a/adr4V8Y).
+
 ## Par ville
 
 Enfin j'ai regardé les communes à l'échelle nationale. J'ai filtré les données pour voir les grandes villes uniquement, en utilisant cette règle : "nombre de personnes dans les ménages fiscaux supérieur à 100000".
@@ -129,6 +131,9 @@ Voici un graphique représentant 5 villes choisies arbitrairement pour représen
 ![Revenus disponibles mensuels par unité de consommation par communes](/images/fr-revenues-cities.png)
 
 Là encore, on voit un schéma similaire, c'est-à-dire que les écarts se produisent principalement dans les déciles les plus hauts. Je pense que l'on peut lire cela comme ça : **"Les écarts de répartitions des richesses dans les grandes villes françaises se concentrent dans les classes les plus aisées".**
+
+**Mise à jour**: Ici encore, [@Paul_Puget](https://twitter.com/Paul_Puget) a relevé que cette interprétation est un peu hâtive. Le graphique permet de voir l’évolution selon les différents déciles des écarts absolus de revenus entre les différentes villes. Mais on ne peut pas vraiment y lire l’évolution des rapports entre ces revenus de différentes villes. Peut-être que le rapport entre les revenus disponibles à Marseille et à Paris et le même pour le premier décile et le dernier, par exemple 0,8. On peut difficilement le lire sur ce graphique en tout cas.
+
 
 # Conclusion
 
