@@ -7,6 +7,8 @@ tags: internet
 summary: In exchange for free mails, would you let your postman open your letters, read them, and insert ads related to their contents?
 ---
 
+- updated on 25/12/2018 : [*added link to Fastmail's post about AABill*](https://github.com/adipasquale/blog.dipasquale.fr/commit/93819a06f0551f01ec4304ba76c83705f38fbb36)
+
 
 > In exchange for free mails, would you let your postman open your letters, read them, and insert ads related to their contents?
 

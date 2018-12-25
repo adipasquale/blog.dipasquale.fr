@@ -4,6 +4,7 @@ title: Incremental crawler with Scrapy and MongoDB
 date: 2018-12-17
 categories: en
 tags: dev scraping
+summary: Tutorial for crawling a website incrementally. Each new scraping session will only scrape new items.
 ---
 
 - updated on 25/12/2018 : [*fixed from_crawler method overriding*](https://github.com/adipasquale/blog.dipasquale.fr/commit/8d2b191e1a1a7151c6b01b088d9c98812376aec1)
