@@ -205,7 +205,7 @@ Now, SSH into your server and install bottle:
 
 ```sh
 apt update
-apt install python3-pip
+apt install -y python3-pip
 pip3 install bottle
 ```
 
@@ -278,3 +278,5 @@ The [git plugin](https://caddyserver.com/docs/http.git) is particularly cool, it
 This setup is not ready for production, make sure to add some security measures! The rebuild API is completely unprotected for instance.
 
 Let me know what you think!
+
+[Discuss on Hacker News](https://news.ycombinator.com/item?id=18768691)
