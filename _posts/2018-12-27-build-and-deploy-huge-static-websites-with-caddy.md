@@ -1,35 +1,35 @@
 ---
 layout: post
 title: Build and deploy huge static websites with Caddy
-date: 2018-12-07 19:03
+date: 2018-12-27
 categories: en
-tags: devops
+tags: DevOps
 ---
 
-In this post, I will show you how to host a big static website (with thousands of pages) on a web server with Caddy.
+I will show you how to setup the hosting and deployment of a static website with thousands of pages dynamically built. It uses the [Caddy web server](https://caddyserver.com/) and a [Digital Ocean](https://digitalocean.com/)'s droplet - but it would work with any Ubuntu server.
 
 # Introduction
 
 ## First of all, don't do it!
 
 There are very few cases where it makes sense to use such a setup.
-Netlify, amongst others is a great hosting provider for static websites.
+[Netlify](https://www.netlify.com/), among others, is a great hosting provider for static websites.
 It is way simpler to setup, it can run custom build scripts, it gives you HTTPS out of the box, and CDN delivery.
 All that for free!
 So really, try building your website there first.
 
 In some cases though, you may reach Netlify's limits.
 I personally experienced failures on Netlify upon deploying a website with 20k+ pages.
-Even though building the pages itself takes 2 minutes or so, the deploys hang on the upload step.
+Even though the build part takes 2 minutes or so, deploys would hang on the upload step.
 
 ## Why not host it on S3 ?
 
 The next reasonable option would be to host the static website on S3.
 It's a pretty common setup too and is well documented by AWS.
 
-Because builds should be automated, I wanted to setup an AWS Lambda function that runs the build and uploads the files to S3.
+Because builds should be automated, I tried setting up an AWS Lambda function that runs the build and uploads the files to S3.
 After 2 days of headaches fighting with the AWS docs to understand how to make it work, I managed to finally run it.
-Only to find out that the upload process from the AWS Lambda local storage to S3 is slow, or at least not fast enough.
+Only to find out that the upload process from the AWS Lambda local storage to S3 is not fast enough.
 
 I tried parallelizing the uploads using threads, but it was still too slow.
 I managed to get to about 500 pages/minute but the Lambdas have a maximum timeout of 15 minutes so it's not enough.
@@ -39,11 +39,13 @@ I'm not an AWS expert, but the whole process was so frustrating that I decided t
 
 # Server setup
 
-I chose to use [Digital Ocean (aka DO)](https://www.digitalocean.com/) for hosting my server, but most of these instructions would be applicable to any other provider.
+I chose to use [Digital Ocean (aka DO)](https://www.digitalocean.com/) for hosting my server, but most of these instructions would be applicable to any other provider ([Scaleway](https://www.scaleway.com//), [Vultr](https://www.vultr.com/), [Exoscale](https://www.exoscale.com) ...).
 
-I have condensed the instructions from this post on DO's blog: [Deploying a Fully-automated Git-based Static Website in Under 5 Minutes](https://blog.digitalocean.com/deploying-a-fully-automated-git-based-static-website-in-under-5-minutes/) into a shell script: [https://gist.github.com/adipasquale/05e432157fcba07b0d2a8cbfdf326670](https://gist.github.com/adipasquale/05e432157fcba07b0d2a8cbfdf326670). If you're not familiar with this kind of setup, I suggest you follow the blog post instead of running the script.
+DO has a great blog about [Deploying a Fully-automated Git-based Static Website in Under 5 Minutes](https://blog.digitalocean.com/deploying-a-fully-automated-git-based-static-website-in-under-5-minutes/) which helped me a lot.
+I have condensed the instructions into a shell script: [https://gist.github.com/adipasquale/05e432157fcba07b0d2a8cbfdf326670](https://gist.github.com/adipasquale/05e432157fcba07b0d2a8cbfdf326670).
+If you're not familiar with this kind of setup, I suggest you follow the blog post instead of running the script.
 
-If you want to use my script, SSH as root into the newly created server and run it with:
+In order to run the script, SSH into the newly created server and:
 
 ```sh
 wget -O - https://gist.github.com/adipasquale/05e432157fcba07b0d2a8cbfdf326670/raw | sh
@@ -105,7 +107,7 @@ https://YOUR_SERVER_IP.nip.io {
 *(don't forget to replace the CAPITAL_PARTS with your infos)*
 
 Here is what we have changed:
-- We have switched the GitHub repository from the old static one to the new dynamically built one you just forked.
+- We have switched the GitHub repository from the static one to the dynamically built one that you just forked.
 - We have also specified where the local repository should be stored: `/var/code/giantsite`
 - We have added a call to the `build.py` script from the fetched repo in the `then` option.
 It will be ran upon each new pull.
@@ -165,12 +167,9 @@ and again, restart Caddy with :
 systemctl restart caddy
 ```
 
-The last step is to go to your forked GitHub repository's Settings, and click Create on the Webhooks tab.
-Use `https://YOUR_SERVER_IP.nip.io/github_webhook` for the url.
+The last step is to go to your forked GitHub repository's Settings, and click "Add Webhook" in the Webhooks tab. Use `https://YOUR_SERVER_IP.nip.io/github_webhook` for the url. I suggest using a JSON Webhook, I've had issues with the regular ones
 
 ![Create a GitHub Webhook](/images/github-webhook.png).
-
-*I suggest using a JSON webhook, I've had issues with the regular ones.*
 
 You can now try making a small change to the `build.py` script and pushing it.
 Your Caddy server should pick it up within a few seconds, and rebuild the pages accordingly.
@@ -178,12 +177,13 @@ Your Caddy server should pick it up within a few seconds, and rebuild the pages 
 # Bonus: API to manually trigger re-builds
 
 If your external data is updated, you may want to trigger a build even though the code has not changed.
-It can therefore be useful to have another webhook that triggers rebuilds and is not linked to GitHub.
+It can therefore be useful to have another Webhook that triggers rebuilds and is not linked to GitHub.
 
 Let's setup a small server that listens to GET requests on `/admin/rebuild` and triggers builds.
 I'm using [bottle](https://bottlepy.org/docs/dev/) here, as it's the simplest one I can think of, but feel free to use any framework you like.
 
 Create a new `server.py` file at the root of your forked repository :
+
 ```py
 # server.py
 
