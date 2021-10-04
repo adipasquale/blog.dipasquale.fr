@@ -23,7 +23,7 @@ jobs:
       run: |
         git config --local user.email "actions@github.com"
         git config --local user.name "GitHub Actions"
-        git add .
-        git commit -m "Rebuilt GH pages with jekyll container"
+        git add docs
+        git commit -m "Rebuilt GH pages site in /docs with jekyll container"
     - name: Push changes
-      run: git push origin gh-pages
+      run: git push origin master
