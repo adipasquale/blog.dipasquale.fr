@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Incremental crawler with Scrapy and MongoDB &#8211; Adrien Di Pasquale Blog</title>
+    <link rel="dns-prefetch" href="//maxcdn.bootstrapcdn.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Tutorial for crawling a website incrementally. Each new scraping session will only scrape new items.">
+    <meta name="robots" content="all">
+    <meta name="author" content="Adrien Di Pasquale">
+    
+    <meta name="keywords" content="en">
+    <link rel="canonical" href="https://blog.dipasquale.fr/en/2018/12/17/incremental-scraping-with-scrapy-and-mongo/">
+    <link rel="alternate" type="application/rss+xml" title="RSS Feed for Adrien Di Pasquale Blog" href="/feed.xml" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/pixyll.css?202110041024" type="text/css">
+
+    <!-- Fonts -->
+    
+    <link href='//fonts.googleapis.com/css?family=Merriweather:900,900italic,300,300italic' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Lato:900,300' rel='stylesheet' type='text/css'>
+    
+    
+      <link href="//maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" rel="stylesheet">
+    
+
+    <!-- MathJax -->
+    
+
+    <!-- Verifications -->
+    
+    
+
+    <!-- Open Graph -->
+    <!-- From: https://github.com/mmistakes/hpstr-jekyll-theme/blob/master/_includes/head.html -->
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Incremental crawler with Scrapy and MongoDB">
+    <meta property="og:description" content="Mostly blogging about web development and Open Data">
+    <meta property="og:url" content="https://blog.dipasquale.fr/en/2018/12/17/incremental-scraping-with-scrapy-and-mongo/">
+    <meta property="og:site_name" content="Adrien Di Pasquale Blog">
+    
+    <meta property="og:image" content="https://blog.dipasquale.fr/images/me.jpeg">
+    
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    
+        <meta name="twitter:site" content="@hypertextadrien" />
+        <meta name="twitter:creator" content="@hypertextadrien" />
+    
+    <meta name="twitter:title" content="Incremental crawler with Scrapy and MongoDB" />
+    <meta name="twitter:description" content="Tutorial for crawling a website incrementally. Each new scraping session will only scrape new items." />
+    <meta name="twitter:url" content="https://blog.dipasquale.fr/en/2018/12/17/incremental-scraping-with-scrapy-and-mongo/" />
+    
+    <meta name="twitter:image" content="https://blog.dipasquale.fr/images/me.jpeg" />
+    
+
+</head>
+
+<body class="site">
+  
+	
+
+  <div class="site-wrap">
+    <header class="site-header px2 px-responsive">
+  <div class="mt2 wrap">
+    <div class="measure">
+      <a href="https://blog.dipasquale.fr" class="site-title">Adrien Di Pasquale Blog</a>
+      <nav class="site-nav">
+        <a href="https://www.dipasquale.fr">About</a>
+        
+
+
+
+    
+    
+    
+    
+
+    
+
+
+      </nav>
+      <div class="clearfix"></div>
+      
+        <div class="social-icons">
+  <div class="social-icons-right">
+    
+      <a class="fa fa-github" href="https://github.com/adipasquale"></a>
+    
+    
+    
+    
+    <a class="fa fa-rss" href="/feed.xml"></a>
+    
+      <a class="fa fa-twitter" href="https://twitter.com/hypertextadrien"></a>
+    
+    
+    
+    
+    
+      <a class="fa fa-envelope" href="mailto:adrien@dipasquale.fr"></a>
+    
+    
+      <a class="fa fa-linkedin" href="https://www.linkedin.com/in/adriendipasquale"></a>
+    
+    
+    
+    
+    
+  </div>
+  <div class="right">
+    
+    
+    
+  </div>
+</div>
+<div class="clearfix"></div>
+
+      
+    </div>
+  </div>
+</header>
+
+
+    <div class="post p2 p-responsive wrap" role="main">
+      <div class="measure">
+        
+
+
+<div class="post-header mb2">
+  <h1>Incremental crawler with Scrapy and MongoDB</h1>
+  <span class="post-meta">Dec 17, 2018</span><br>
+  
+  <span class="post-meta small">
+  
+    11 minute read
+  
+  </span>
+</div>
+
+<article class="post-content">
+  <ul>
+  <li>updated on 25/12/2018 : <a href="https://github.com/adipasquale/blog.dipasquale.fr/commit/8d2b191e1a1a7151c6b01b088d9c98812376aec1"><em>fixed from_crawler method overriding</em></a></li>
+</ul>
+
+<p>In this post I will show you how to scrape a website incrementally.
+Each new scraping session will only scrape new items.
+We will be crawling <a href="https://techcrunch.com/">Techcrunch blog posts</a> as an example here.</p>
+
+<p>This tutorial will use Scrapy, a great Python scraping library.
+It’s simple yet very powerful.
+If you don’t know it, have a look at their <a href="https://doc.scrapy.org/en/latest/intro/overview.html">overview page</a>.</p>
+
+<p>We will also use MongoDB, the famous NoSQL DB, but it would be a similar process with any DB you want.</p>
+
+<p><strong>TLDR;</strong> if you already know Scrapy, head to the <a href="#incremental">last part about incremental scraping</a>. You can find the full code for this project <a href="https://github.com/adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb">here on GitHub</a>.</p>
+
+<h1 id="setup-your-scrapy-spider">Setup your Scrapy spider</h1>
+
+<p>Start by installing Scrapy</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip3 <span class="nb">install </span>scrapy
+</code></pre></div></div>
+
+<p><em>(in a real project, you would use a <a href="https://virtualenv.pypa.io/en/latest/">virtualenv</a> and a <code class="language-plaintext highlighter-rouge">requirements.txt</code> file)</em></p>
+
+<p>and initialize your project with:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy startproject tc_scraper
+<span class="nb">cd </span>tc_scraper
+scrapy genspider techcrunch techcrunch.com
+</code></pre></div></div>
+
+<h1 id="scrape-the-posts">Scrape the posts</h1>
+
+<h2 id="play-around-in-the-shell">Play around in the shell</h2>
+
+<p>First have a look at the DOM structure on <a href="https://www.techcrunch.com">https://www.techcrunch.com</a>, using your browser’s developer tools.</p>
+
+<p><strong>Make sure to disable Javascript</strong>, because the scraper will not execute it by default.
+It’s doable with Scrapy, but it’s not the point of this tutorial.
+I’m using <a href="https://addons.mozilla.org/en-US/firefox/addon/javascript-toggler/">this extension</a> to easily disable JS on Firefox.</p>
+
+<p><img src="/images/techcrunch-inspect.png" alt="inspection of Techcrunch's DOM in Firefox" /></p>
+
+<p>You can then open a Scrapy shell with</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy shell https://www.techcrunch.com
+</code></pre></div></div>
+
+<p>This shell is very helpful to play around and figure out how to extract the data. Here are some commands you can try one by one:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block"</span><span class="p">)</span>
+<span class="n">posts</span> <span class="o">=</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block"</span><span class="p">)</span>
+<span class="n">posts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">posts</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block__title__link"</span><span class="p">)</span>
+<span class="n">title</span> <span class="o">=</span> <span class="n">posts</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block__title__link"</span><span class="p">)</span>
+<span class="n">title</span>
+<span class="n">title</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">"::attr(href)"</span><span class="p">).</span><span class="n">extract</span><span class="p">()</span>
+<span class="n">title</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">"::attr(href)"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>We are using CSS selectors, and the <code class="language-plaintext highlighter-rouge">attr</code> function on CSS3 pseudo-elements.
+Learn more about this extraction part in the <a href="https://doc.scrapy.org/en/latest/topics/selectors.html">scrapy docs</a>.</p>
+
+<h2 id="scrapy-architecture">Scrapy architecture</h2>
+
+<p><img src="/images/scrapy_architecture.png" alt="scrapy architecture" /></p>
+
+<p>This diagram  from <a href="https://doc.scrapy.org/en/0.10.3/topics/architecture.html">scrapy docs</a> is a quick overview of how Scrapy works:</p>
+<ul>
+  <li>The <span style="color:#DC2300;">Spider</span> yields <span style="color:#8AAF59">Requests</span>, which are sent to the <span style="color:#CCCCFF">Scheduler</span>.</li>
+  <li>The <span style="color:#CCCCFF">Scheduler</span> sends <span style="color:#8AAF59">Requests</span> to the <span style="color:#E6E64C">Downloader</span>, which executes them against the distant website.</li>
+  <li>The <span style="color:#8AAF59">Responses</span> are sent to the <span style="color:#DC2300;">Spider</span> for parsing.</li>
+  <li>The <span style="color:#DC2300;">Spider</span> parses and yields Items, which are sent to the <span style="color:#FF9966">Item Pipeline</span>.</li>
+  <li>The <span style="color:#FF9966">Item Pipeline</span> is responsible for processing them and storing them.</li>
+</ul>
+
+<p>In this tutorial, we will not touch the <span style="color:#CCCCFF">Scheduler</span>, nor the <span style="color:#E6E64C">Downloader</span>.</p>
+
+<p>We will only write a <span style="color:#DC2300;">Spider</span> and tweak the <span style="color:#FF9966">Item Pipeline</span>.</p>
+
+<h2 id="scrape-the-list-pages">Scrape the list pages</h2>
+
+<p>So let’s write the first part of the scraper:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># spiders/techcrunch.py
+</span>
+<span class="kn">import</span> <span class="nn">scrapy</span>
+
+
+<span class="k">class</span> <span class="nc">TechcrunchSpider</span><span class="p">(</span><span class="n">scrapy</span><span class="p">.</span><span class="n">Spider</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s">'techcrunch'</span>
+    <span class="n">allowed_domains</span> <span class="o">=</span> <span class="p">[</span><span class="s">'techcrunch.com'</span><span class="p">]</span>
+    <span class="n">start_urls</span> <span class="o">=</span> <span class="p">[</span><span class="s">'https://techcrunch.com/'</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block"</span><span class="p">):</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">post</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block__title__link"</span><span class="p">)</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">title</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">"::attr(href)"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">()</span>
+            <span class="k">yield</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="p">.</span><span class="n">parse_post</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".load-more"</span><span class="p">):</span>
+            <span class="n">next_page_url</span> <span class="o">=</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".load-more::attr(href)"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">()</span>
+            <span class="k">yield</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Request</span><span class="p">(</span><span class="n">next_page_url</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">parse_post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="k">pass</span>
+</code></pre></div></div>
+
+<p>Here is a walkthrough of this spider:</p>
+
+<ul>
+  <li>It starts by scraping the start url https://techcrunch.com/</li>
+  <li>It goes through all posts blocks, extracts the link, and enqueues a new request.
+This new request will use a different callback from the default one: <code class="language-plaintext highlighter-rouge">parse_post</code></li>
+  <li>After going through all the posts, it looks for a next page link, and if it finds it, it enqueues a new request with that link.
+This request will use the default callback <code class="language-plaintext highlighter-rouge">parse</code></li>
+</ul>
+
+<p>You can run it with <code class="language-plaintext highlighter-rouge">scrapy crawl techcrunch</code>, but be aware that it will go through ALL the pages (thousands here), so be ready to hit <code class="language-plaintext highlighter-rouge">CTRL+C</code> to stop it!</p>
+
+<h2 id="add-a-pages-limit-argument">Add a pages limit argument</h2>
+
+<p>In order to avoid this problem, let’s add a pages limit argument to our spider right now:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># spiders/techcrunch.py
+</span>
+<span class="kn">import</span> <span class="nn">scrapy</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+
+<span class="k">class</span> <span class="nc">TechcrunchSpider</span><span class="p">(</span><span class="n">scrapy</span><span class="p">.</span><span class="n">Spider</span><span class="p">):</span>
+    <span class="c1"># ...
+</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit_pages</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TechcrunchSpider</span><span class="p">,</span> <span class="bp">self</span><span class="p">).</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">limit_pages</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">.</span><span class="n">limit_pages</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">limit_pages</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">.</span><span class="n">limit_pages</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="c1"># ...
+</span>        <span class="k">if</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".load-more"</span><span class="p">):</span>
+            <span class="n">next_page_url</span> <span class="o">=</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".load-more::attr(href)"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">()</span>
+            <span class="c1"># urls look like https://techcrunch.com/page/4/
+</span>            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="p">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s">".*\/page\/(\d+)\/"</span><span class="p">,</span> <span class="n">next_page_url</span><span class="p">)</span>
+            <span class="n">next_page_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="p">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">next_page_number</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="p">.</span><span class="n">limit_pages</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Request</span><span class="p">(</span><span class="n">next_page_url</span><span class="p">)</span>
+    <span class="c1"># ...
+</span></code></pre></div></div>
+
+<p>In the constructor, we allow passing a new kwarg called limit_pages, which we cast to an integer.
+In the <code class="language-plaintext highlighter-rouge">parse</code> method, we extract the next page number thanks to a regex on the url. Then we compare it to the <code class="language-plaintext highlighter-rouge">limit_pages</code> argument, and only if it’s below, we enqueue the next page request.</p>
+
+<p>You can now run the spider safely with:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy crawl techcrunch <span class="nt">-a</span> <span class="nv">limit_pages</span><span class="o">=</span>2
+</code></pre></div></div>
+
+<h2 id="scrape-the-post-pages">Scrape the post pages</h2>
+
+<p>So far, we have left the <code class="language-plaintext highlighter-rouge">scrape_post</code> request empty, so our spider is not actually scraping anything.
+Here is what post pages look like (again, without JS):</p>
+
+<p><img src="/images/techcrunch-post.png" alt="a Techcrunch post page" /></p>
+
+<p>Before writing the scraper method, we need to declare the items that we are going to scrape:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># items.py
+</span><span class="kn">import</span> <span class="nn">scrapy</span>
+
+<span class="k">class</span> <span class="nc">BlogPost</span><span class="p">(</span><span class="n">scrapy</span><span class="p">.</span><span class="n">Item</span><span class="p">):</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Field</span><span class="p">()</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Field</span><span class="p">()</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Field</span><span class="p">()</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Field</span><span class="p">()</span>
+    <span class="n">published_at</span> <span class="o">=</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Field</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><em>Note: There is now a <a href="https://stackoverflow.com/a/5077350">simple way</a> to have a dynamic schema without manually declaring all the fields.
+I will show how to use it in a next article</em></p>
+
+<p>You can open a new Scrapy shell to play around on any post page and figure out the selectors you are going to use.
+For example:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy shell https://techcrunch.com/2017/05/01/awesomeness-is-launching-a-news-division-aimed-at-gen-z/
+</code></pre></div></div>
+
+<p>And once you have figured them out, you can write the scraper’s missing method:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># spiders/techcrunch.py
+</span>
+<span class="kn">from</span> <span class="nn">tc_scraper.items</span> <span class="kn">import</span> <span class="n">BlogPost</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+
+<span class="k">class</span> <span class="nc">TechcrunchSpider</span><span class="p">(</span><span class="n">scrapy</span><span class="p">.</span><span class="n">Spider</span><span class="p">):</span>
+
+    <span class="c1"># ...
+</span>
+    <span class="k">def</span> <span class="nf">parse_post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">BlogPost</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">"h1::text"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">(),</span>
+            <span class="n">author</span><span class="o">=</span><span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".article__byline&gt;a::text"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">().</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="n">published_at</span><span class="o">=</span><span class="bp">self</span><span class="p">.</span><span class="n">extract_post_date</span><span class="p">(</span><span class="n">response</span><span class="p">),</span>
+            <span class="n">content</span><span class="o">=</span><span class="bp">self</span><span class="p">.</span><span class="n">extract_content</span><span class="p">(</span><span class="n">response</span><span class="p">),</span>
+            <span class="n">url</span><span class="o">=</span><span class="n">response</span><span class="p">.</span><span class="n">url</span>
+        <span class="p">)</span>
+        <span class="k">yield</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">extract_post_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">date_text</span> <span class="o">=</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">"meta[name='sailthru.date']::attr(content)"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="p">.</span><span class="n">datetime</span><span class="p">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">date_text</span><span class="p">,</span> <span class="s">"%Y-%m-%d %H:%M:%S"</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">extract_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">paragraphs_texts</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">p</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">" ::text"</span><span class="p">).</span><span class="n">extract</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".article-content&gt;p"</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">paragraphs</span> <span class="o">=</span> <span class="p">[</span><span class="s">""</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paragraphs_texts</span><span class="p">]</span>
+        <span class="n">paragraphs</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="p">.</span><span class="n">subn</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="s">""</span><span class="p">,</span> <span class="n">p</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paragraphs</span><span class="p">]</span>
+        <span class="n">paragraphs</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paragraphs</span> <span class="k">if</span> <span class="n">p</span><span class="p">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s">""</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s">"</span><span class="se">\n\n</span><span class="s">"</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">paragraphs</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>So what’s going here?</p>
+
+<ul>
+  <li>We instanciate a <code class="language-plaintext highlighter-rouge">BlogPost</code> item that we then yield, that’s the Scrapy way.</li>
+  <li>Most of the fields are straightforward, so we write their selectors inline.
+Some others are more complicated so we have extracted them to independent methods.</li>
+  <li>The <code class="language-plaintext highlighter-rouge">published_at</code> field is a bit tricky because in the visible DOM there is no plain text datetime, only a vague ‘X hours/days ago’.
+If you inspect the DOM closely, you will find this meta <code class="language-plaintext highlighter-rouge">sailthru.date</code> that is easy to use and parse.</li>
+  <li>The <code class="language-plaintext highlighter-rouge">extract_content</code> method is quite involved, but it’s really not key to this article’s objective.
+We are basically joining the texts from the different paragraphs in a way that’s human readable.
+Because the content is actually HTML, we are losing some infos in the process, like the links and images.</li>
+</ul>
+
+<p>You can now run the spider with:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy crawl techcrunch <span class="nt">-a</span> <span class="nv">limit_pages</span><span class="o">=</span>2 <span class="nt">-o</span> posts.json
+</code></pre></div></div>
+
+<p>and Scrapy will generate a nice <code class="language-plaintext highlighter-rouge">posts.json</code> file with all the scraped items. Yay!</p>
+
+<p><img src="/images/cat_posts_json.png" alt="display posts.json contents" /></p>
+
+<h1 id="incremental-scraping"><a name="incremental"></a>Incremental Scraping</h1>
+
+<h2 id="store-items-in-mongodb">Store items in MongoDB</h2>
+
+<p>So in the last step we exported the items to a JSON file.
+For long term storage and re-use, it’s more convenient to use a database.
+We will use MongoDB here, but you could use a regular SQL database too.
+I personally find it convenient on scraping projects to use a NoSQL database because of the frequent schema changes, especially as you initially iterate on the scraper.</p>
+
+<p>If you are on Mac OS X, these commands will install MongoDB server and start it as a service:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>brew <span class="nb">install </span>mongodb
+brew services start mongodb
+</code></pre></div></div>
+
+<p>We are going to create a Scrapy pipeline so that each yielded item will get saved to MongoDB.
+This process is well documented in <a href="https://doc.scrapy.org/en/latest/topics/item-pipeline.html?highlight=mongo#write-items-to-mongodb">Scrapy’s docs</a>.</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># pipelines.py
+</span>
+<span class="kn">import</span> <span class="nn">pymongo</span>
+
+
+<span class="k">class</span> <span class="nc">MongoPipeline</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="n">collection_name</span> <span class="o">=</span> <span class="s">'tc_posts'</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mongo_uri</span><span class="p">,</span> <span class="n">mongo_db</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_uri</span> <span class="o">=</span> <span class="n">mongo_uri</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_db</span> <span class="o">=</span> <span class="n">mongo_db</span>
+
+    <span class="o">@</span><span class="nb">classmethod</span>
+    <span class="k">def</span> <span class="nf">from_crawler</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">crawler</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span>
+            <span class="n">mongo_uri</span><span class="o">=</span><span class="n">crawler</span><span class="p">.</span><span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'MONGO_URI'</span><span class="p">),</span>
+            <span class="n">mongo_db</span><span class="o">=</span><span class="n">crawler</span><span class="p">.</span><span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'MONGO_DATABASE'</span><span class="p">,</span> <span class="s">'tc_scraper'</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">open_spider</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">pymongo</span><span class="p">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">mongo_uri</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">[</span><span class="bp">self</span><span class="p">.</span><span class="n">mongo_db</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">close_spider</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">process_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">db</span><span class="p">[</span><span class="bp">self</span><span class="p">.</span><span class="n">collection_name</span><span class="p">].</span><span class="n">insert_one</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">item</span>
+</code></pre></div></div>
+
+<p>and activate it in the settings:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># settings.py
+</span>
+<span class="n">ITEM_PIPELINES</span> <span class="o">=</span> <span class="p">{</span>
+   <span class="s">'tc_scraper.pipelines.MongoPipeline'</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Last step is to install the new <code class="language-plaintext highlighter-rouge">pymongo</code> dependency:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip3 <span class="nb">install </span>pymongo
+</code></pre></div></div>
+
+<p>You can now re-run the spider:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy crawl techcrunch -a limit_pages=2
+</code></pre></div></div>
+
+<p>Feel free to open a mongo shell and check that the items were indeed inserted:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mongo localhost/tc_scraper
+<span class="o">&gt;</span> db.tc_posts.count<span class="o">()</span>
+40
+<span class="o">&gt;</span> db.tc_posts.findOne<span class="o">()</span>
+<span class="o">{</span>
+	<span class="s2">"_id"</span>: ObjectId<span class="o">(</span><span class="s2">"5c09294a7fa9c70f84e43322"</span><span class="o">)</span>,
+	<span class="s2">"url"</span>: <span class="s2">"https://techcrunch.com/2018/12/06/looker-looks-to-future-with-103m-investment-on-1-6b-valuation/"</span>,
+	<span class="s2">"author"</span>: <span class="s2">"Ron Miller"</span>,
+
+  ...
+</code></pre></div></div>
+
+<h2 id="update-existing-items">Update existing items</h2>
+
+<p>If you run the spider again, you will notice that you now have 80 items in your database.
+Let’s update the Pipeline so that it does not insert a new post each time, but rather updates the existing one if it already exists.</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># pipelines.py
+</span>
+<span class="p">...</span>
+
+    <span class="k">def</span> <span class="nf">process_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">db</span><span class="p">[</span><span class="bp">self</span><span class="p">.</span><span class="n">collection_name</span><span class="p">].</span><span class="n">find_one_and_update</span><span class="p">(</span>
+            <span class="p">{</span><span class="s">"url"</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s">"url"</span><span class="p">]},</span>
+            <span class="p">{</span><span class="s">"$set"</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">item</span><span class="p">)},</span>
+            <span class="n">upsert</span><span class="o">=</span><span class="bp">True</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">item</span>
+</code></pre></div></div>
+
+<p>Here we are using the url as the key, because unfortunately there does not seem to be a more canonical ID in the DOM.
+It should work as long as Techcrunch does not change their posts slugs or published dates often.</p>
+
+<p>You can drop all items and re-run the spider twice:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s2">"db.tc_posts.drop();"</span> | mongo localhost/tc_scraper
+scrapy crawl techcrunch <span class="nt">-a</span> <span class="nv">limit_pages</span><span class="o">=</span>2
+scrapy crawl techcrunch <span class="nt">-a</span> <span class="nv">limit_pages</span><span class="o">=</span>2
+<span class="nb">echo</span> <span class="s2">"db.tc_posts.count();"</span> | mongo localhost/tc_scraper
+</code></pre></div></div>
+
+<p>You should now have only 40 items in the database.</p>
+
+<p><em>Note: If you are scared about running so many requests against Techcrunch.com, be aware that by default, Scrapy will use a <a href="https://doc.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.httpcache">cache</a>.
+For most requests, it will not re-run them every single time, but instead re-use the previous response</em></p>
+
+<h2 id="limit-crawls-to-new-items">Limit crawls to new items</h2>
+
+<p>So far our solution is almost complete, but it will re-scrape all items every time you start it.
+In this step, we will make sure that we don’t re-scrape items uselessly, in order to have faster scraping sessions, and to limit our requests rate to the website.</p>
+
+<p>What we will do is to update the spider so that it prevents requests to items that were already scraped before and are in the database.</p>
+
+<p>First let’s extract the MongoDB connection logic from the pipeline in order to re-use it in the spider:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># mongo_provider.py (new file)
+</span>
+<span class="kn">import</span> <span class="nn">pymongo</span>
+
+
+<span class="k">class</span> <span class="nc">MongoProvider</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="n">collection_name</span> <span class="o">=</span> <span class="s">'tc_posts'</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uri</span><span class="p">,</span> <span class="n">database</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_uri</span> <span class="o">=</span> <span class="n">uri</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_db</span> <span class="o">=</span> <span class="n">database</span> <span class="ow">or</span> <span class="s">'tc_scraper'</span>
+
+    <span class="k">def</span> <span class="nf">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">pymongo</span><span class="p">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">mongo_uri</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">[</span><span class="bp">self</span><span class="p">.</span><span class="n">mongo_db</span><span class="p">][</span><span class="bp">self</span><span class="p">.</span><span class="n">collection_name</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">close_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>and update the pipeline accordingly:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># pipelines.py
+</span>
+<span class="kn">from</span> <span class="nn">tc_scraper.mongo_provider</span> <span class="kn">import</span> <span class="n">MongoProvider</span>
+
+
+<span class="k">class</span> <span class="nc">MongoPipeline</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_provider</span> <span class="o">=</span> <span class="n">MongoProvider</span><span class="p">(</span>
+            <span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'MONGO_URI'</span><span class="p">),</span>
+            <span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'MONGO_DATABASE'</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="o">@</span><span class="nb">classmethod</span>
+    <span class="k">def</span> <span class="nf">from_crawler</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">crawler</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">crawler</span><span class="p">.</span><span class="n">settings</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">open_spider</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">mongo_provider</span><span class="p">.</span><span class="n">get_collection</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">close_spider</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_provider</span><span class="p">.</span><span class="n">close_connection</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">process_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">collection</span><span class="p">.</span><span class="n">find_one_and_update</span><span class="p">(</span>
+            <span class="p">{</span><span class="s">"url"</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s">"url"</span><span class="p">]},</span>
+            <span class="p">{</span><span class="s">"$set"</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">item</span><span class="p">)},</span>
+            <span class="n">upsert</span><span class="o">=</span><span class="bp">True</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">item</span>
+</code></pre></div></div>
+
+<p><em>You can re-run the scraper at this checkpoint, nothing should have changed</em></p>
+
+<p>We can now update the spider so that it uses this mongo provider:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># spiders/techcrunch.py
+</span>
+<span class="p">...</span>
+<span class="kn">from</span> <span class="nn">tc_scraper.mongo_provider</span> <span class="kn">import</span> <span class="n">MongoProvider</span>
+
+
+<span class="k">class</span> <span class="nc">TechcrunchSpider</span><span class="p">(</span><span class="n">scrapy</span><span class="p">.</span><span class="n">Spider</span><span class="p">):</span>
+    <span class="p">...</span>
+    <span class="o">@</span><span class="nb">classmethod</span>
+    <span class="k">def</span> <span class="nf">from_crawler</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">crawler</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">'mongo_uri'</span><span class="p">]</span> <span class="o">=</span> <span class="n">crawler</span><span class="p">.</span><span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"MONGO_URI"</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">'mongo_database'</span><span class="p">]</span> <span class="o">=</span> <span class="n">crawler</span><span class="p">.</span><span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'MONGO_DATABASE'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">TechcrunchSpider</span><span class="p">,</span> <span class="n">cls</span><span class="p">).</span><span class="n">from_crawler</span><span class="p">(</span><span class="n">crawler</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit_pages</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">mongo_uri</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">mongo_database</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="p">...</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_provider</span> <span class="o">=</span> <span class="n">MongoProvider</span><span class="p">(</span><span class="n">mongo_uri</span><span class="p">,</span> <span class="n">mongo_database</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">mongo_provider</span><span class="p">.</span><span class="n">get_collection</span><span class="p">()</span>
+        <span class="n">last_items</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">collection</span><span class="p">.</span><span class="n">find</span><span class="p">().</span><span class="n">sort</span><span class="p">(</span><span class="s">"published_at"</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">).</span><span class="n">limit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">last_scraped_url</span> <span class="o">=</span> <span class="n">last_items</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">"url"</span><span class="p">]</span> <span class="k">if</span> <span class="n">last_items</span><span class="p">.</span><span class="n">count</span><span class="p">()</span> <span class="k">else</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block"</span><span class="p">):</span>
+            <span class="p">...</span>
+            <span class="k">if</span> <span class="n">url</span> <span class="o">==</span> <span class="bp">self</span><span class="p">.</span><span class="n">last_scraped_url</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">"reached last item scraped, breaking loop"</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="p">.</span><span class="n">parse_post</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Here is a quick breakdown of what we are doing here:</p>
+
+<ul>
+  <li>In order to use the spider’s settings that contain the mongo credentials, we need to do override this <code class="language-plaintext highlighter-rouge">from_crawler</code> method. It’s quite verbose, and not very intuitive. I agree it’s annoying.</li>
+  <li>We then use these settings in the constructor to initialize a MongoDB connection thanks to our new <code class="language-plaintext highlighter-rouge">MongoProvider</code> class.</li>
+  <li>We query Mongo for the last scraped item and store it’s url.
+Here we are sorting the posts on the <code class="language-plaintext highlighter-rouge">published_at</code> descendingly, we made sure that this is consistent with Techcrunch’s sorting, or else our algorithm would not work properly.</li>
+  <li>In the parsing loop, we break and stop the scraping as soon as we reach a post with this url.
+We do it by preventing yielding the request, and breaking from the loop.</li>
+</ul>
+
+<p>You can now perform a few tests, drop some of the last items from MongoDB and re-scrape, you will see that it only scrapes the missing items and stops. Success!</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mongo localhost/tc_scraper
+<span class="o">&gt;</span> last_item <span class="o">=</span> db.tc_posts.find<span class="o">()</span>.sort<span class="o">({</span>published_at: <span class="nt">-1</span><span class="o">})[</span>0]
+<span class="o">&gt;</span> db.tc_posts.remove<span class="o">({</span>_id: last_item[<span class="s2">"_id"</span><span class="o">]})</span>
+<span class="o">&gt;</span> <span class="nb">exit
+</span>scrapy crawl techcrunch <span class="nt">-a</span> <span class="nv">limit_pages</span><span class="o">=</span>2
+</code></pre></div></div>
+
+<h1 id="conclusion">Conclusion</h1>
+
+<p>We now have a scraper that will do the least amount of work possible on each new run. I hope you enjoyed this tutorial, and that this gave you new ideas for scraping projects!</p>
+
+<p>You can find the full code for this project here on GitHub: <a href="https://github.com/adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb">adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb</a>.</p>
+
+<p>You can deploy your spider to <a href="https://scrapinghub.com/scrapy-cloud">ScrapingHub cloud</a>, and schedule it to run daily on their servers.
+I’m not affiliated to them in any way, it’s just an awesome product and their free plan already does a lot.
+By the way, ScrapingHub is the main contributor to the fully open-source Scrapy project that we just used.</p>
+
+<p>To go further, you can implement a new <code class="language-plaintext highlighter-rouge">force_rescrape</code> argument, that will bypass our limit and force going through all the items again.
+This could be useful if you update the <code class="language-plaintext highlighter-rouge">scrape_post</code> method, or if Techcrunch changes their DOM structure.</p>
+
+<p>Let me know if you use this technique in one of your projects!</p>
+
+<p><a href="https://news.ycombinator.com/item?id=18697956">Discuss on Hacker News</a></p>
+
+</article>
+
+
+
+
+  <div class="py2 post-footer">
+  <img src="/images/me.jpeg" alt="Adrien Di Pasquale" class="avatar" />
+  <p>
+    👋 I'm Adrien Di Pasquale, a freelance web developer
+    <br/>
+    Follow me on Twitter : <a href="https://twitter.com/hypertextadrien">@hypertextadrien</a>
+  </p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="center">
+  <div class="measure">
+    <small>
+      Powered by <a href="https://jekyllrb.com/">Jekyll</a> with the <a href="https://github.com/johno/pixyll">Pyxill theme</a> and hosted on <a href="https://netlify.com">Netlify</a>
+    </small>
+  </div>
+</footer>
+
+
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Scraping tips &#8211; Adrien Di Pasquale Blog</title>
+    <link rel="dns-prefetch" href="//maxcdn.bootstrapcdn.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Mostly blogging about web development and Open Data">
+    <meta name="robots" content="all">
+    <meta name="author" content="Adrien Di Pasquale">
+    
+    <meta name="keywords" content="">
+    <link rel="canonical" href="https://blog.dipasquale.fr/2019/12/10/scraping-tips/">
+    <link rel="alternate" type="application/rss+xml" title="RSS Feed for Adrien Di Pasquale Blog" href="/feed.xml" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/pixyll.css?202110041024" type="text/css">
+
+    <!-- Fonts -->
+    
+    <link href='//fonts.googleapis.com/css?family=Merriweather:900,900italic,300,300italic' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Lato:900,300' rel='stylesheet' type='text/css'>
+    
+    
+      <link href="//maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" rel="stylesheet">
+    
+
+    <!-- MathJax -->
+    
+
+    <!-- Verifications -->
+    
+    
+
+    <!-- Open Graph -->
+    <!-- From: https://github.com/mmistakes/hpstr-jekyll-theme/blob/master/_includes/head.html -->
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Scraping tips">
+    <meta property="og:description" content="Mostly blogging about web development and Open Data">
+    <meta property="og:url" content="https://blog.dipasquale.fr/2019/12/10/scraping-tips/">
+    <meta property="og:site_name" content="Adrien Di Pasquale Blog">
+    
+    <meta property="og:image" content="https://blog.dipasquale.fr/images/me.jpeg">
+    
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    
+        <meta name="twitter:site" content="@hypertextadrien" />
+        <meta name="twitter:creator" content="@hypertextadrien" />
+    
+    <meta name="twitter:title" content="Scraping tips" />
+    <meta name="twitter:description" content="Mostly blogging about web development and Open Data" />
+    <meta name="twitter:url" content="https://blog.dipasquale.fr/2019/12/10/scraping-tips/" />
+    
+    <meta name="twitter:image" content="https://blog.dipasquale.fr/images/me.jpeg" />
+    
+
+</head>
+
+<body class="site">
+  
+	
+
+  <div class="site-wrap">
+    <header class="site-header px2 px-responsive">
+  <div class="mt2 wrap">
+    <div class="measure">
+      <a href="https://blog.dipasquale.fr" class="site-title">Adrien Di Pasquale Blog</a>
+      <nav class="site-nav">
+        <a href="https://www.dipasquale.fr">About</a>
+        
+
+
+
+    
+    
+    
+    
+
+    
+
+
+      </nav>
+      <div class="clearfix"></div>
+      
+        <div class="social-icons">
+  <div class="social-icons-right">
+    
+      <a class="fa fa-github" href="https://github.com/adipasquale"></a>
+    
+    
+    
+    
+    <a class="fa fa-rss" href="/feed.xml"></a>
+    
+      <a class="fa fa-twitter" href="https://twitter.com/hypertextadrien"></a>
+    
+    
+    
+    
+    
+      <a class="fa fa-envelope" href="mailto:adrien@dipasquale.fr"></a>
+    
+    
+      <a class="fa fa-linkedin" href="https://www.linkedin.com/in/adriendipasquale"></a>
+    
+    
+    
+    
+    
+  </div>
+  <div class="right">
+    
+    
+    
+  </div>
+</div>
+<div class="clearfix"></div>
+
+      
+    </div>
+  </div>
+</header>
+
+
+    <div class="post p2 p-responsive wrap" role="main">
+      <div class="measure">
+        
+
+
+<div class="post-header mb2">
+  <h1>Scraping tips</h1>
+  <span class="post-meta">Dec 10, 2019</span><br>
+  
+  <span class="post-meta small">
+  
+    5 minute read
+  
+  </span>
+</div>
+
+<article class="post-content">
+  <p>Scraping websites can sometimes get tricky, but that’s when things gets interesting.
+When you’re aiming to scrape data from a website that doesn’t want to be scraped, it becomes like a game of cat and mouse.</p>
+
+<p><img src="https://i.imgur.com/HwN6qYV.jpg" alt="" /></p>
+
+<p>The website tries to identify robots and prevent them from accessing the data, without impacting actual users browsing the website.
+The robots are thus designed to mimick as closely as possible actual users’ behaviour, so as to become stealth.</p>
+
+<p>Here is a list of recommendations, more or less obvious, but always useful to remind of.</p>
+
+<h2 id="keep-it-simple-stupid">Keep It Simple, Stupid</h2>
+
+<p>Websites have become complex with Single Page Applications and React, Vue…
+Do not forget that browsing websites comes down to HTTP requests being sent to servers.</p>
+
+<p>There are two approaches to scraping:</p>
+
+<ol>
+  <li>reproduce individual HTTP requests one by one</li>
+  <li>mimick an actual browser and user clicking around</li>
+</ol>
+
+<p>💁🏽‍♀️ As often as you can, try to use the first method. It is usually much more reliable and efficient.</p>
+
+<p>However, the two approaches are complimentary.
+Sometimes the second one is necessary, if the interactions between the JS and the HTTP requests are too entangled.</p>
+
+<h2 id="sniff-out-apis">Sniff out APIs</h2>
+
+<p>Look for public APIs that return JSON instead of HTML that you have to parse.
+Use your browser’s network tab XHR filter to do so.
+This is often the case with Single Page Applications.</p>
+
+<p><img src="https://i.imgur.com/i6erv0B.gif" alt="Product Hunt GraphQL API" /></p>
+
+<p>Mobile applications also often use an API to collect data from the servers.
+Most of the time this API will be somehow authenticated, but it is sometimes very easy to find a working token.</p>
+
+<p>⚙️ Use <a href="https://www.charlesproxy.com/">Charles Proxy</a> to listen to outgoing requests from mobile applications.</p>
+
+<h2 id="know-your-http-basics">Know your HTTP basics</h2>
+
+<p>HTTP requests have 4 simple characteristics:</p>
+
+<ol>
+  <li>An URL (with optional query string params)</li>
+  <li>A verb (aka a method, eg: GET, POST, etc)</li>
+  <li>Optional Headers</li>
+  <li>An optional body (for non-GET requests)</li>
+</ol>
+
+<p>The body can be any type of text or binary data, which should be described by the <code class="language-plaintext highlighter-rouge">Content-Type</code> header.
+You can find every valid value <a href="http://www.iana.org/assignments/media-types/media-types.xhtml">here</a></p>
+
+<p>💡 When you get stuck and cannot figure out how the website can block your request, compare these 4 characteristics to an actual request from your browser.</p>
+
+<p>🔒 Also, prefer HTTPs requests, websites can get suspicious otherwise.</p>
+
+<h2 id="dont-reinvent-the-wheel">Don’t reinvent the wheel</h2>
+
+<p>I strongly recommend against using a regular HTTP library (e.g. Python’s <a href="https://requests.readthedocs.io/"><code class="language-plaintext highlighter-rouge">requests</code></a> or Ruby’s <a href="https://github.com/httprb/http"><code class="language-plaintext highlighter-rouge">http</code></a>) .
+Instead, build upon a scraping framework like Python’s <a href="https://github.com/scrapy/scrapy"><code class="language-plaintext highlighter-rouge">Scrapy</code></a>, NodeJS <a href="https://github.com/yujiosaka/headless-chrome-crawler"><code class="language-plaintext highlighter-rouge">headless-chrome-scraper</code></a> or Go’s <a href="https://github.com/gocolly/colly">Colly</a>.</p>
+
+<p>You won’t have to reimplement super common patterns, like requests throttling, retries policy, links traversal and deduplication, passing cookies…
+As a web framework does for building websites, this will help you focus on the core specific code that targets your websites.</p>
+
+<p>🙌 <a href="https://github.com/scrapy/scrapy"><code class="language-plaintext highlighter-rouge">Scrapy</code></a> is my personal favourite. It is open source with a backing company <a href="https://scrapinghub.com/scrapy-cloud">ScrapingHub</a> that also provides a Heroku-like PaaS service. I’m not affiliated to them in any way, but they provide instant deployment and scheduling, with an extremely low pricing policy (it’s often free).</p>
+
+<h2 id="become-a-curl-ninja">Become a curl Ninja</h2>
+
+<p>You may be tempted to use GUIs like <a href="https://www.getpostman.com/">Postman</a> or <a href="https://insomnia.rest/">Insomnia</a>, but I would suggest you get to learn <code class="language-plaintext highlighter-rouge">curl</code> instead.
+It is actually not very complicated and lets you do everything without restrictions.
+You can then reproduce it in any SSH terminal.
+<code class="language-plaintext highlighter-rouge">man curl</code> is your friend.</p>
+
+<p>Use and abuse the “Copy as curl” feature in your network tab, to paste it in a terminal and see if it’s reproductible.
+What I often do is try and find the smallest set of headers and body params that still succeds by bissecting down.</p>
+
+<p><em>Pro Tip</em>: copied curl commands can be lengthy.
+I often copy them in my IDE, search and replace all <code class="language-plaintext highlighter-rouge">-H</code> with <code class="language-plaintext highlighter-rouge">-H \n</code> (with regex mode activated) to get one line per header.</p>
+
+<p>⚙️ <a href="https://curl.trillworks.com/">Python to curl</a> is a tool that converts curl commands to Python <code class="language-plaintext highlighter-rouge">requests</code> call.</p>
+
+<h2 id="best-practices-for-scrapers">Best practices for scrapers</h2>
+
+<ul>
+  <li>Fetch first, store the response and then parse it. This way you won’t have to refetch if there is a bug in your parser.</li>
+  <li>You can also use caching locally when developping to bypass this problem</li>
+  <li>Distribute the workload in successive steps. eg. for a cooking website, first retrieve all recipes URLs and then fetch them instead of directly following every nested link.</li>
+</ul>
+
+<h2 id="it-works-on-my-computer️">It works on my computer™️</h2>
+
+<p>As often, the scraper you wrote may work locally but not in production.</p>
+
+<p>One source of issues is the IP of your server that may be blacklisted.
+It is easy for the defending websites to block whole range of IPs that are known to come from datacenters, or to whitelist specific countries IPs.
+The usual counter for this is to use proxies.
+You will find countless services that sell proxies access on the internet, with varying quality.
+Sometimes you won’t have a choice but to use residential proxies that are costy (&gt;100USD/mo.).</p>
+
+<p>⚙️ <a href="https://icanhazip.com/">icanhazip</a> is a simpleway to check the IP you’re currently scraping from.</p>
+
+<p>Another source of trouble is the classical environment differences that you forgot about.
+For example, you may generate timestamps in your code and format them to forge requests, and the timezone may be different on your machine and on the production server.</p>
+
+<p>⚙️ <a href="https://httpbin.org/">httpbin</a> can be useful to double check that the received data by the distant server is actually what you meant to send.</p>
+
+<h2 id="have-fun">Have fun!</h2>
+
+<p>Figuring out how to bypass another developer’s protections can be a really fun puzzle to solve.</p>
+
+<p>🤜🤛 Be a good citizen and scrape responsibly:</p>
+<ul>
+  <li>Space out requests so they don’t overflow the website.</li>
+  <li>Only scrape public data</li>
+  <li>If you encounter private or sensitive data that should not be public, warn the website.</li>
+</ul>
+
+<p><em>Written by <a href="https://github.com/maelorn">Ismaël Attoumani</a> and <a href="https://twitter.com/hypertextadrien/">Adrien Di Pasquale</a>, proofread by <a href="https://twitter.com/AntoineAugusti">Antoine Augusti</a></em></p>
+
+</article>
+
+
+
+
+  <div class="py2 post-footer">
+  <img src="/images/me.jpeg" alt="Adrien Di Pasquale" class="avatar" />
+  <p>
+    👋 I'm Adrien Di Pasquale, a freelance web developer
+    <br/>
+    Follow me on Twitter : <a href="https://twitter.com/hypertextadrien">@hypertextadrien</a>
+  </p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="center">
+  <div class="measure">
+    <small>
+      Powered by <a href="https://jekyllrb.com/">Jekyll</a> with the <a href="https://github.com/johno/pixyll">Pyxill theme</a> and hosted on <a href="https://netlify.com">Netlify</a>
+    </small>
+  </div>
+</footer>
+
+
+</body>
+</html>

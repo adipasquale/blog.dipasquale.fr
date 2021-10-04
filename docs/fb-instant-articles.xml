@@ -1,0 +1,1534 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title></title>
+    <link>https://blog.dipasquale.fr</link>
+    <description>
+      Mostly blogging about web development and Open Data
+    </description>
+    
+        
+            <item>
+                <title>Scraping tips</title>
+                <link>https://blog.dipasquale.fr/2019/12/10/scraping-tips/</link>
+                <content:encoded>
+                    <![CDATA[
+                    <p>Scraping websites can sometimes get tricky, but that’s when things gets interesting.
+When you’re aiming to scrape data from a website that doesn’t want to be scraped, it becomes like a game of cat and mouse.</p>
+
+<p><img src="https://i.imgur.com/HwN6qYV.jpg" alt="" /></p>
+
+<p>The website tries to identify robots and prevent them from accessing the data, without impacting actual users browsing the website.
+The robots are thus designed to mimick as closely as possible actual users’ behaviour, so as to become stealth.</p>
+
+<p>Here is a list of recommendations, more or less obvious, but always useful to remind of.</p>
+
+<h2 id="keep-it-simple-stupid">Keep It Simple, Stupid</h2>
+
+<p>Websites have become complex with Single Page Applications and React, Vue…
+Do not forget that browsing websites comes down to HTTP requests being sent to servers.</p>
+
+<p>There are two approaches to scraping:</p>
+
+<ol>
+  <li>reproduce individual HTTP requests one by one</li>
+  <li>mimick an actual browser and user clicking around</li>
+</ol>
+
+<p>💁🏽‍♀️ As often as you can, try to use the first method. It is usually much more reliable and efficient.</p>
+
+<p>However, the two approaches are complimentary.
+Sometimes the second one is necessary, if the interactions between the JS and the HTTP requests are too entangled.</p>
+
+<h2 id="sniff-out-apis">Sniff out APIs</h2>
+
+<p>Look for public APIs that return JSON instead of HTML that you have to parse.
+Use your browser’s network tab XHR filter to do so.
+This is often the case with Single Page Applications.</p>
+
+<p><img src="https://i.imgur.com/i6erv0B.gif" alt="Product Hunt GraphQL API" /></p>
+
+<p>Mobile applications also often use an API to collect data from the servers.
+Most of the time this API will be somehow authenticated, but it is sometimes very easy to find a working token.</p>
+
+<p>⚙️ Use <a href="https://www.charlesproxy.com/">Charles Proxy</a> to listen to outgoing requests from mobile applications.</p>
+
+<h2 id="know-your-http-basics">Know your HTTP basics</h2>
+
+<p>HTTP requests have 4 simple characteristics:</p>
+
+<ol>
+  <li>An URL (with optional query string params)</li>
+  <li>A verb (aka a method, eg: GET, POST, etc)</li>
+  <li>Optional Headers</li>
+  <li>An optional body (for non-GET requests)</li>
+</ol>
+
+<p>The body can be any type of text or binary data, which should be described by the <code class="language-plaintext highlighter-rouge">Content-Type</code> header.
+You can find every valid value <a href="http://www.iana.org/assignments/media-types/media-types.xhtml">here</a></p>
+
+<p>💡 When you get stuck and cannot figure out how the website can block your request, compare these 4 characteristics to an actual request from your browser.</p>
+
+<p>🔒 Also, prefer HTTPs requests, websites can get suspicious otherwise.</p>
+
+<h2 id="dont-reinvent-the-wheel">Don’t reinvent the wheel</h2>
+
+<p>I strongly recommend against using a regular HTTP library (e.g. Python’s <a href="https://requests.readthedocs.io/"><code class="language-plaintext highlighter-rouge">requests</code></a> or Ruby’s <a href="https://github.com/httprb/http"><code class="language-plaintext highlighter-rouge">http</code></a>) .
+Instead, build upon a scraping framework like Python’s <a href="https://github.com/scrapy/scrapy"><code class="language-plaintext highlighter-rouge">Scrapy</code></a>, NodeJS <a href="https://github.com/yujiosaka/headless-chrome-crawler"><code class="language-plaintext highlighter-rouge">headless-chrome-scraper</code></a> or Go’s <a href="https://github.com/gocolly/colly">Colly</a>.</p>
+
+<p>You won’t have to reimplement super common patterns, like requests throttling, retries policy, links traversal and deduplication, passing cookies…
+As a web framework does for building websites, this will help you focus on the core specific code that targets your websites.</p>
+
+<p>🙌 <a href="https://github.com/scrapy/scrapy"><code class="language-plaintext highlighter-rouge">Scrapy</code></a> is my personal favourite. It is open source with a backing company <a href="https://scrapinghub.com/scrapy-cloud">ScrapingHub</a> that also provides a Heroku-like PaaS service. I’m not affiliated to them in any way, but they provide instant deployment and scheduling, with an extremely low pricing policy (it’s often free).</p>
+
+<h2 id="become-a-curl-ninja">Become a curl Ninja</h2>
+
+<p>You may be tempted to use GUIs like <a href="https://www.getpostman.com/">Postman</a> or <a href="https://insomnia.rest/">Insomnia</a>, but I would suggest you get to learn <code class="language-plaintext highlighter-rouge">curl</code> instead.
+It is actually not very complicated and lets you do everything without restrictions.
+You can then reproduce it in any SSH terminal.
+<code class="language-plaintext highlighter-rouge">man curl</code> is your friend.</p>
+
+<p>Use and abuse the “Copy as curl” feature in your network tab, to paste it in a terminal and see if it’s reproductible.
+What I often do is try and find the smallest set of headers and body params that still succeds by bissecting down.</p>
+
+<p><em>Pro Tip</em>: copied curl commands can be lengthy.
+I often copy them in my IDE, search and replace all <code class="language-plaintext highlighter-rouge">-H</code> with <code class="language-plaintext highlighter-rouge">-H \n</code> (with regex mode activated) to get one line per header.</p>
+
+<p>⚙️ <a href="https://curl.trillworks.com/">Python to curl</a> is a tool that converts curl commands to Python <code class="language-plaintext highlighter-rouge">requests</code> call.</p>
+
+<h2 id="best-practices-for-scrapers">Best practices for scrapers</h2>
+
+<ul>
+  <li>Fetch first, store the response and then parse it. This way you won’t have to refetch if there is a bug in your parser.</li>
+  <li>You can also use caching locally when developping to bypass this problem</li>
+  <li>Distribute the workload in successive steps. eg. for a cooking website, first retrieve all recipes URLs and then fetch them instead of directly following every nested link.</li>
+</ul>
+
+<h2 id="it-works-on-my-computer️">It works on my computer™️</h2>
+
+<p>As often, the scraper you wrote may work locally but not in production.</p>
+
+<p>One source of issues is the IP of your server that may be blacklisted.
+It is easy for the defending websites to block whole range of IPs that are known to come from datacenters, or to whitelist specific countries IPs.
+The usual counter for this is to use proxies.
+You will find countless services that sell proxies access on the internet, with varying quality.
+Sometimes you won’t have a choice but to use residential proxies that are costy (&gt;100USD/mo.).</p>
+
+<p>⚙️ <a href="https://icanhazip.com/">icanhazip</a> is a simpleway to check the IP you’re currently scraping from.</p>
+
+<p>Another source of trouble is the classical environment differences that you forgot about.
+For example, you may generate timestamps in your code and format them to forge requests, and the timezone may be different on your machine and on the production server.</p>
+
+<p>⚙️ <a href="https://httpbin.org/">httpbin</a> can be useful to double check that the received data by the distant server is actually what you meant to send.</p>
+
+<h2 id="have-fun">Have fun!</h2>
+
+<p>Figuring out how to bypass another developer’s protections can be a really fun puzzle to solve.</p>
+
+<p>🤜🤛 Be a good citizen and scrape responsibly:</p>
+<ul>
+  <li>Space out requests so they don’t overflow the website.</li>
+  <li>Only scrape public data</li>
+  <li>If you encounter private or sensitive data that should not be public, warn the website.</li>
+</ul>
+
+<p><em>Written by <a href="https://github.com/maelorn">Ismaël Attoumani</a> and <a href="https://twitter.com/hypertextadrien/">Adrien Di Pasquale</a>, proofread by <a href="https://twitter.com/AntoineAugusti">Antoine Augusti</a></em></p>
+
+                    ]]>
+                </content:encoded>
+                <guid isPermaLink="false">/2019/12/10/scraping-tips/</guid>
+                <description>
+                    
+                </description>
+                <pubDate>Tue, 10 Dec 2019 00:00:00 -0600</pubDate>
+                <author>Adrien Di Pasquale</author>
+            </item>
+        
+    
+        
+            <item>
+                <title>Combining React Router and Shopify App Bridge Navigation</title>
+                <link>https://blog.dipasquale.fr/2019/02/28/polaris-react-router/</link>
+                <content:encoded>
+                    <![CDATA[
+                    <p>In this article we will show you a quick way to navigate correctly inside your react embedded app using shopify app-bridge and polaris libraries.</p>
+
+<h2 id="linking-links">Linking links</h2>
+
+<p>The first thing to do is to link the react router <code class="language-plaintext highlighter-rouge">Link</code>  component with shopify polaris <code class="language-plaintext highlighter-rouge">Link</code>. To do so, we pass an Adapter to our <code class="language-plaintext highlighter-rouge">AppProvider</code> component. Shopify anticipated this issue so you only have to pass the Adapter to the <code class="language-plaintext highlighter-rouge">AppProvider</code> component under the attribute <code class="language-plaintext highlighter-rouge">linkComponent</code>. Here is an example :</p>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">Link</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">react-router-dom</span><span class="dl">'</span>
+<span class="k">import</span> <span class="p">{</span> <span class="nx">AppProvider</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">@shopify/polaris</span><span class="dl">'</span>
+
+<span class="kd">function</span> <span class="nx">AdapterLink</span> <span class="p">({</span> <span class="nx">url</span><span class="p">,</span> <span class="p">...</span><span class="nx">rest</span> <span class="p">})</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="p">&lt;</span><span class="nc">Link</span> <span class="na">to</span><span class="p">=</span><span class="si">{</span><span class="nx">url</span><span class="si">}</span> <span class="si">{</span><span class="p">...</span><span class="nx">rest</span><span class="si">}</span> <span class="p">/&gt;</span>
+<span class="p">}</span>
+
+<span class="nx">ReactDOM</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span>
+  <span class="p">&lt;</span><span class="nc">AppProvider</span>
+    <span class="na">apiKey</span><span class="p">=</span><span class="si">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">apiKey</span><span class="si">}</span>
+    <span class="na">shopOrigin</span><span class="p">=</span><span class="si">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">shopOrigin</span><span class="si">}</span>
+    <span class="na">linkComponent</span><span class="p">=</span><span class="si">{</span><span class="nx">AdapterLink</span><span class="si">}</span>
+  <span class="p">&gt;</span>
+  ...
+  <span class="p">&lt;/</span><span class="nc">AppProvider</span><span class="p">&gt;</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="a-history-of-wrap">A history of wrap</h2>
+
+<p><a href="https://help.shopify.com/en/api/embedded-apps/app-bridge/actions/navigation/history">Here is how to use the app bridge history object to navigate inside your app.</a></p>
+
+<p>Now what we want is to provide to the history the url given to our <code class="language-plaintext highlighter-rouge">Route</code> component.</p>
+
+<h3 id="accessing-the-history-object">Accessing the history object</h3>
+
+<p>The doc does not tell us how to access the history from inside a react component. But it is actually possible to access it via <a href="https://reactjs.org/docs/context.html">React contexts</a> if your component is between two <code class="language-plaintext highlighter-rouge">AppProvider</code> components by adding this :</p>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">static</span> <span class="nx">contextTypes</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="na">polaris</span><span class="p">:</span> <span class="nx">PropTypes</span><span class="p">.</span><span class="nx">object</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>now you can call the <code class="language-plaintext highlighter-rouge">appBridge</code> inside your class, like for example in the constuctor :</p>
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">constructor</span><span class="p">(</span><span class="nx">props</span><span class="p">,</span><span class="nx">context</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">super</span><span class="p">(</span><span class="nx">props</span><span class="p">,</span> <span class="nx">context</span><span class="p">)</span>
+  <span class="kd">const</span> <span class="nx">app</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">polaris</span><span class="p">.</span><span class="nx">appBridge</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<h3 id="wrapper">Wrapper</h3>
+
+<p>To combine both things we have to push the url of the <code class="language-plaintext highlighter-rouge">Route</code> inside the polaris history. So what we did is creating a wrapped component that does that every time he receives a new url :</p>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">History</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">@shopify/app-bridge/actions</span><span class="dl">'</span>
+<span class="k">import</span> <span class="p">{</span> <span class="nx">Route</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">react-router-dom</span><span class="dl">'</span>
+
+<span class="kd">function</span> <span class="nx">withShopifyEmbeddedAppPushState</span> <span class="p">(</span><span class="nx">WrappedComponent</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="kd">class</span> <span class="kd">extends</span> <span class="nx">React</span><span class="p">.</span><span class="nx">Component</span> <span class="p">{</span>
+    <span class="kd">static</span> <span class="nx">contextTypes</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="na">polaris</span><span class="p">:</span> <span class="nx">PropTypes</span><span class="p">.</span><span class="nx">object</span>
+    <span class="p">};</span>
+
+    <span class="nx">componentWillReceiveProps</span> <span class="p">(</span><span class="nx">nextProps</span><span class="p">)</span> <span class="p">{</span>
+      <span class="kd">const</span> <span class="nx">app</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">polaris</span><span class="p">.</span><span class="nx">appBridge</span>
+      <span class="kd">const</span> <span class="nx">history</span> <span class="o">=</span> <span class="nx">History</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">app</span><span class="p">)</span>
+      <span class="nx">history</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">History</span><span class="p">.</span><span class="nx">Action</span><span class="p">.</span><span class="nx">PUSH</span><span class="p">,</span> <span class="nx">nextProps</span><span class="p">.</span><span class="nx">computedMatch</span><span class="p">.</span><span class="nx">url</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="nx">render</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="p">&lt;</span><span class="nc">WrappedComponent</span> <span class="si">{</span><span class="p">...</span><span class="k">this</span><span class="p">.</span><span class="nx">props</span><span class="si">}</span> <span class="p">/&gt;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">const</span> <span class="nx">ShopifyEmbeddedAppRoute</span> <span class="o">=</span> <span class="nx">withShopifyEmbeddedAppPushState</span><span class="p">(</span><span class="nx">Route</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="et-voilà-">Et voilà !</h2>
+
+<p>Here is what your rendering should like now :</p>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">ReactDOM</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span>
+   <span class="p">&lt;</span><span class="nc">AppProvider</span>
+     <span class="na">apiKey</span><span class="p">=</span><span class="si">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">apiKey</span><span class="si">}</span>
+     <span class="na">shopOrigin</span><span class="p">=</span><span class="si">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">shopOrigin</span><span class="si">}</span>
+     <span class="na">linkComponent</span><span class="p">=</span><span class="si">{</span><span class="nx">AdapterLink</span><span class="si">}</span>
+   <span class="p">&gt;</span>
+     <span class="p">&lt;</span><span class="nc">BrowserRouter</span><span class="p">&gt;</span>
+       <span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+         <span class="p">&lt;</span><span class="nc">Switch</span><span class="p">&gt;</span>
+           <span class="p">&lt;</span><span class="nc">ShopifyEmbeddedAppRoute</span>
+             <span class="na">path</span><span class="p">=</span><span class="s">'/products'</span>
+             <span class="na">render</span><span class="p">=</span><span class="si">{</span><span class="nx">p</span> <span class="o">=&gt;</span> <span class="p">&lt;</span><span class="nc">ProductsContainer</span> <span class="si">{</span><span class="p">...</span><span class="nx">p</span><span class="si">}</span> <span class="si">{</span><span class="p">...</span><span class="nx">props</span><span class="si">}</span> <span class="p">/&gt;</span><span class="si">}</span>
+           <span class="p">/&gt;</span>
+         <span class="p">&lt;/</span><span class="nc">Switch</span><span class="p">&gt;</span>
+       <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+     <span class="p">&lt;/</span><span class="nc">BrowserRouter</span><span class="p">&gt;</span>
+   <span class="p">&lt;/</span><span class="nc">AppProvider</span><span class="p">&gt;</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p>Now if you place links inside your react app :</p>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">Link</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">@shopify/polaris</span><span class="dl">'</span>
+<span class="o">&lt;</span><span class="nx">Link</span> <span class="nx">url</span><span class="o">=</span><span class="dl">'</span><span class="s1">/products</span><span class="dl">'</span><span class="o">&gt;</span><span class="nx">Subscription</span> <span class="nx">Products</span><span class="o">&lt;</span><span class="sr">/Link</span><span class="err">&gt;
+</span></code></pre></div></div>
+
+<p>it will call our wrapped component that will push the correct url inside shopify history !
+You are now in the right page with the correct url 🕺</p>
+
+                    ]]>
+                </content:encoded>
+                <guid isPermaLink="false">/2019/02/28/polaris-react-router/</guid>
+                <description>
+                    
+                </description>
+                <pubDate>Thu, 28 Feb 2019 00:00:00 -0600</pubDate>
+                <author>Adrien Di Pasquale</author>
+            </item>
+        
+    
+        
+            <item>
+                <title>Build and deploy huge static websites with Caddy</title>
+                <link>https://blog.dipasquale.fr/en/2018/12/27/build-and-deploy-huge-static-websites-with-caddy/</link>
+                <content:encoded>
+                    <![CDATA[
+                    <p>I will show you how to setup the hosting and deployment of a static website with thousands of pages dynamically built. It uses the <a href="https://caddyserver.com/">Caddy web server</a> and a <a href="https://digitalocean.com/">Digital Ocean</a>’s droplet - but it would work with any Ubuntu server.</p>
+
+<h1 id="introduction">Introduction</h1>
+
+<h2 id="first-of-all-dont-do-it">First of all, don’t do it!</h2>
+
+<p>There are very few cases where it makes sense to use such a setup.
+<a href="https://www.netlify.com/">Netlify</a>, among others, is a great hosting provider for static websites.
+It is way simpler to setup, it can run custom build scripts, it gives you HTTPS out of the box, and CDN delivery.
+All that for free!
+So really, try building your website there first.</p>
+
+<p>In some cases though, you may reach Netlify’s limits.
+I personally experienced failures on Netlify upon deploying a website with 20k+ pages.
+Even though the build part takes 2 minutes or so, deploys would hang on the upload step.</p>
+
+<h2 id="why-not-host-it-on-s3-">Why not host it on S3 ?</h2>
+
+<p>The next reasonable option would be to host the static website on S3.
+It’s a pretty common setup too and is well documented by AWS.</p>
+
+<p>Because builds should be automated, I tried setting up an AWS Lambda function that runs the build and uploads the files to S3.
+After 2 days of headaches fighting with the AWS docs to understand how to make it work, I managed to finally run it.
+Only to find out that the upload process from the AWS Lambda local storage to S3 is not fast enough.</p>
+
+<p>I tried parallelizing the uploads using threads, but it was still too slow.
+I managed to get to about 500 pages/minute but the Lambdas have a maximum timeout of 15 minutes so it’s not enough.
+In any cases, a build that takes more than 15 minutes would not have been satisfying.</p>
+
+<p>I’m not an AWS expert, but the whole process was so frustrating that I decided to go old-school and host it on a server I control.</p>
+
+<h1 id="server-setup">Server setup</h1>
+
+<p>I chose to use <a href="https://www.digitalocean.com/">Digital Ocean (aka DO)</a> for hosting my server, but most of these instructions would be applicable to any other provider (<a href="https://www.scaleway.com//">Scaleway</a>, <a href="https://www.vultr.com/">Vultr</a>, <a href="https://www.exoscale.com">Exoscale</a> …).</p>
+
+<p>DO has a great blog about <a href="https://blog.digitalocean.com/deploying-a-fully-automated-git-based-static-website-in-under-5-minutes/">Deploying a Fully-automated Git-based Static Website in Under 5 Minutes</a> which helped me a lot.
+I have condensed the instructions into a shell script: <a href="https://gist.github.com/adipasquale/05e432157fcba07b0d2a8cbfdf326670">https://gist.github.com/adipasquale/05e432157fcba07b0d2a8cbfdf326670</a>.
+If you’re not familiar with this kind of setup, I suggest you follow the blog post instead of running the script.</p>
+
+<p>In order to run the script, SSH into the newly created server and:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wget <span class="nt">-O</span> - https://gist.github.com/adipasquale/05e432157fcba07b0d2a8cbfdf326670/raw | sh
+</code></pre></div></div>
+
+<p>Here is a quick summary of this script:</p>
+<ul>
+  <li>It installs the Caddy server</li>
+  <li>It creates a systemd service</li>
+  <li>It sets up Caddy to listen to a subdomain of nip.io</li>
+  <li>Caddy will use Let’s Encrypt to get you a valid SSL certificate so that HTTPS works out-of-the-box.</li>
+  <li>It uses the Caddy git plugin to automatically stay in sync with this repo: <a href="https://github.com/kamaln7/basic-static-website">kamaln7/basic-static-website</a></li>
+</ul>
+
+<p>The last output should point you to an URL that looks like https://YOUR_SERVER_IP.nip.io:</p>
+
+<p><img src="/images/basic-static-website.png" alt="basic static website" /></p>
+
+<p><em>(notice the green lock :)</em></p>
+
+<p>In case it does not work properly, you can run this command on the server to see logs and exceptions from Caddy:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>tail -f /var/log/syslog
+</code></pre></div></div>
+
+<p><strong>Important Note</strong>: We are skipping a lot of important steps for an actual production server here:</p>
+<ul>
+  <li>You should follow <a href="https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu-16-04">this DO guide</a> for securing your Ubuntu droplet</li>
+  <li>You should create a DO Firewall <a href="https://cloud.digitalocean.com/networking/firewalls">here</a> and allow SSH, HTTP, and HTTPS inbound traffic</li>
+  <li>If you own a domain name, you can add an DNS record of the A type that points to your droplet’s IP, or follow <a href="https://www.digitalocean.com/docs/networking/dns/how-to/add-domains/">this short guide</a> to use DO’s own name servers. Here, we are using nip.io to have a subdomain without any setup.</li>
+</ul>
+
+<h1 id="dynamic-build-system">Dynamic build system</h1>
+
+<p>Currently, the server is synchronizing with a very simple static website project, that has no build script at all.</p>
+
+<p>We will now switch to a dynamic build system.
+The build script will create HTML pages from external data and template files, and the server will now serve the resulting files.
+This build script will be re-executed upon each git push to the repository.</p>
+
+<p>For the purpose of this article, I have created a very simple static website builder: <a href="https://github.com/adipasquale/giantsite">giantsite</a>.
+It’s a 50-lines Python 3 script, that queries a <a href="https://jsonplaceholder.typicode.com/">dummy API</a> for 5000 photos, builds an HTML page for each and an index page that links to them.</p>
+
+<p>First, fork <a href="https://github.com/adipasquale/giantsite">giantsite</a>.</p>
+
+<p>Now let’s update Caddy’s configuration.
+SSH into the server and update it with <code class="language-plaintext highlighter-rouge">vim /etc/caddy/Caddyfile</code>:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code># /etc/caddy/Caddyfile
+
+https://YOUR_SERVER_IP.nip.io {
+    [...]
+    git https://github.com/YOUR_GITHUB_HANDLE/giantsite /var/code/giantsite {
+        interval 300
+        then python3 /var/code/giantsite/build.py /var/www
+    }
+    root /var/www
+}
+</code></pre></div></div>
+
+<p><em>(don’t forget to replace the CAPITAL_PARTS with your infos)</em></p>
+
+<p>Here is what we have changed:</p>
+<ul>
+  <li>We have switched the GitHub repository from the static one to the dynamically built one that you just forked.</li>
+  <li>We have also specified where the local repository should be stored: <code class="language-plaintext highlighter-rouge">/var/code/giantsite</code></li>
+  <li>We have added a call to the <code class="language-plaintext highlighter-rouge">build.py</code> script from the fetched repo in the <code class="language-plaintext highlighter-rouge">then</code> option.
+It will be ran upon each new pull.</li>
+  <li>Finally, we have declared that the server’s root is <code class="language-plaintext highlighter-rouge">/var/www</code>.
+It defines the files that will be served.</li>
+</ul>
+
+<p>We still have to perform a few steps in order for this setup to work.
+Again, ssh into the server and run these commands</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Install python3 (it's already installed on DO's droplets)</span>
+apt <span class="nb">install </span>python3
+
+<span class="c"># Create the new folders and set correct permissions</span>
+<span class="nb">mkdir</span> /var/code/
+<span class="nb">mkdir</span> /var/www/
+<span class="nb">chown </span>www-data:www-data /var/code/
+<span class="nb">chown </span>www-data:www-data /var/www/
+
+<span class="c"># Restart Caddy, this will trigger a re-build</span>
+systemctl restart caddy
+</code></pre></div></div>
+
+<p><em>Note : You may have to use <code class="language-plaintext highlighter-rouge">sudo</code> here if you’re not logged in as root</em></p>
+
+<p>You should now be able to access your website and see the newly built website :</p>
+
+<p><img src="/images/giantsite-screencast.gif" alt="giantsite screencast" /></p>
+
+<h2 id="auto-deploys-on-push">Auto-deploys on push</h2>
+
+<p>Currently, our Caddy server will synchronize with the GitHub repository every 300 seconds or so.
+Let’s setup a Webhook from GitHub to our server, so that it synchronizes and rebuilds upon each push.</p>
+
+<p>First, open a terminal and copy the output from <code class="language-plaintext highlighter-rouge">uuidgen</code>.
+We’ll use this random string as a shared secret in our Webhook.</p>
+
+<p>Now let’s setup Caddy so it listens to the Webhook.
+SSH into the server, and run <code class="language-plaintext highlighter-rouge">vim /etc/caddy/Caddyfile</code> :</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># /etc/caddy/Caddyfile</span>
+
+https://YOUR_SERVER_IP.nip.io <span class="o">{</span>
+    <span class="o">[</span>...]
+    git <span class="o">[</span>...] <span class="o">{</span>
+        <span class="o">[</span>...]
+        hook /github_hook YOUR_WEBHOOK_SECRET
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>and again, restart Caddy with :</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>systemctl restart caddy
+</code></pre></div></div>
+
+<p>The last step is to go to your forked GitHub repository’s Settings, and click “Add Webhook” in the Webhooks tab. Use <code class="language-plaintext highlighter-rouge">https://YOUR_SERVER_IP.nip.io/github_webhook</code> for the url. I suggest using a JSON Webhook, I’ve had issues with the regular ones</p>
+
+<p><img src="/images/github-webhook.png" alt="Create a GitHub Webhook" />.</p>
+
+<p>You can now try making a small change to the <code class="language-plaintext highlighter-rouge">build.py</code> script and pushing it.
+Your Caddy server should pick it up within a few seconds, and rebuild the pages accordingly.</p>
+
+<h1 id="bonus-api-to-manually-trigger-re-builds">Bonus: API to manually trigger re-builds</h1>
+
+<p>If your external data is updated, you may want to trigger a build even though the code has not changed.
+It can therefore be useful to have another Webhook that triggers rebuilds and is not linked to GitHub.</p>
+
+<p>Let’s setup a small server that listens to GET requests on <code class="language-plaintext highlighter-rouge">/admin/rebuild</code> and triggers builds.
+I’m using <a href="https://bottlepy.org/docs/dev/">bottle</a> here, as it’s the simplest one I can think of, but feel free to use any framework you like.</p>
+
+<p>Create a new <code class="language-plaintext highlighter-rouge">server.py</code> file at the root of your forked repository :</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># server.py
+</span>
+<span class="kn">from</span> <span class="nn">build</span> <span class="kn">import</span> <span class="n">Builder</span>
+<span class="kn">from</span> <span class="nn">bottle</span> <span class="kn">import</span> <span class="n">route</span><span class="p">,</span> <span class="n">run</span>
+
+
+<span class="o">@</span><span class="n">route</span><span class="p">(</span><span class="s">'/admin/rebuild'</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">rebuild</span><span class="p">():</span>
+    <span class="n">Builder</span><span class="p">(</span><span class="s">"/var/www"</span><span class="p">).</span><span class="n">build</span><span class="p">()</span>
+    <span class="k">return</span> <span class="s">'Rebuild done !'</span>
+
+<span class="n">run</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s">'localhost'</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8000</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Commit it and push it so that your server picks it up.</p>
+
+<p>Now, SSH into your server and install bottle:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apt update
+apt <span class="nb">install</span> <span class="nt">-y</span> python3-pip
+pip3 <span class="nb">install </span>bottle
+</code></pre></div></div>
+
+<p>You need to create another systemd service for this bottle server:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># /etc/systemd/system/bottle.service</span>
+
+<span class="o">[</span>Unit]
+<span class="nv">Description</span><span class="o">=</span>Bottle server
+<span class="nv">After</span><span class="o">=</span>syslog.target
+
+<span class="o">[</span>Service]
+<span class="nv">Type</span><span class="o">=</span>simple
+<span class="nv">User</span><span class="o">=</span>www-data
+<span class="nv">Group</span><span class="o">=</span>www-data
+<span class="nv">WorkingDirectory</span><span class="o">=</span>/var/code/giantsite
+<span class="nv">ExecStart</span><span class="o">=</span>/usr/bin/env python3 server.py
+<span class="nv">StandardOutput</span><span class="o">=</span>syslog
+<span class="nv">StandardError</span><span class="o">=</span>syslog
+<span class="nv">Restart</span><span class="o">=</span>always
+<span class="nv">RestartSec</span><span class="o">=</span>2
+
+<span class="o">[</span>Install]
+<span class="nv">WantedBy</span><span class="o">=</span>bottle.target
+</code></pre></div></div>
+
+<p>This new service can be started with:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>systemctl start bottle
+systemctl <span class="nb">enable </span>bottle
+</code></pre></div></div>
+
+<p>And we also have to update the Caddyfile so that external requests are directed to this bottle server:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># /etc/caddy/Caddyfile</span>
+
+https://YOUR_SERVER_IP.nip.io <span class="o">{</span>
+    <span class="o">[</span>...]
+    proxy /admin localhost:8000 <span class="o">{</span>
+        transparent
+    <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p><em>Note: I used a namespaced route <code class="language-plaintext highlighter-rouge">/admin</code> here but you’re free to do as you please. Be careful that it matches what bottle expects though.</em></p>
+
+<p>Finally, restart Caddy so that the changes are applied:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>systemctl restart caddy
+</code></pre></div></div>
+
+<p>Phew! You should now be able to trigger a rebuild with a simple:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl https://YOUR_SERVER_IP.nip.io/admin/rebuild
+</code></pre></div></div>
+
+<p>🛠 Build, Build, Build 🛠</p>
+
+<h1 id="conclusion">Conclusion</h1>
+
+<p>This setup makes sense only in rare situations, namely when you are building thousands of files.
+It’s an interesting experience though, as it shows how easy and convenient Caddy makes it.
+The <a href="https://caddyserver.com/docs/http.git">git plugin</a> is particularly cool, it’s so nice to be able to deploy with a simple <code class="language-plaintext highlighter-rouge">git push</code>.</p>
+
+<p>This setup is not ready for production, make sure to add some security measures! The rebuild API is completely unprotected for instance.</p>
+
+<p>Let me know what you think!</p>
+
+<p><a href="https://news.ycombinator.com/item?id=18768691">Discuss on Hacker News</a></p>
+
+                    ]]>
+                </content:encoded>
+                <guid isPermaLink="false">/en/2018/12/27/build-and-deploy-huge-static-websites-with-caddy/</guid>
+                <description>
+                    
+                </description>
+                <pubDate>Thu, 27 Dec 2018 00:00:00 -0600</pubDate>
+                <author>Adrien Di Pasquale</author>
+            </item>
+        
+    
+        
+            <item>
+                <title>Incremental crawler with Scrapy and MongoDB</title>
+                <link>https://blog.dipasquale.fr/en/2018/12/17/incremental-scraping-with-scrapy-and-mongo/</link>
+                <content:encoded>
+                    <![CDATA[
+                    <ul>
+  <li>updated on 25/12/2018 : <a href="https://github.com/adipasquale/blog.dipasquale.fr/commit/8d2b191e1a1a7151c6b01b088d9c98812376aec1"><em>fixed from_crawler method overriding</em></a></li>
+</ul>
+
+<p>In this post I will show you how to scrape a website incrementally.
+Each new scraping session will only scrape new items.
+We will be crawling <a href="https://techcrunch.com/">Techcrunch blog posts</a> as an example here.</p>
+
+<p>This tutorial will use Scrapy, a great Python scraping library.
+It’s simple yet very powerful.
+If you don’t know it, have a look at their <a href="https://doc.scrapy.org/en/latest/intro/overview.html">overview page</a>.</p>
+
+<p>We will also use MongoDB, the famous NoSQL DB, but it would be a similar process with any DB you want.</p>
+
+<p><strong>TLDR;</strong> if you already know Scrapy, head to the <a href="#incremental">last part about incremental scraping</a>. You can find the full code for this project <a href="https://github.com/adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb">here on GitHub</a>.</p>
+
+<h1 id="setup-your-scrapy-spider">Setup your Scrapy spider</h1>
+
+<p>Start by installing Scrapy</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip3 <span class="nb">install </span>scrapy
+</code></pre></div></div>
+
+<p><em>(in a real project, you would use a <a href="https://virtualenv.pypa.io/en/latest/">virtualenv</a> and a <code class="language-plaintext highlighter-rouge">requirements.txt</code> file)</em></p>
+
+<p>and initialize your project with:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy startproject tc_scraper
+<span class="nb">cd </span>tc_scraper
+scrapy genspider techcrunch techcrunch.com
+</code></pre></div></div>
+
+<h1 id="scrape-the-posts">Scrape the posts</h1>
+
+<h2 id="play-around-in-the-shell">Play around in the shell</h2>
+
+<p>First have a look at the DOM structure on <a href="https://www.techcrunch.com">https://www.techcrunch.com</a>, using your browser’s developer tools.</p>
+
+<p><strong>Make sure to disable Javascript</strong>, because the scraper will not execute it by default.
+It’s doable with Scrapy, but it’s not the point of this tutorial.
+I’m using <a href="https://addons.mozilla.org/en-US/firefox/addon/javascript-toggler/">this extension</a> to easily disable JS on Firefox.</p>
+
+<p><img src="/images/techcrunch-inspect.png" alt="inspection of Techcrunch's DOM in Firefox" /></p>
+
+<p>You can then open a Scrapy shell with</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy shell https://www.techcrunch.com
+</code></pre></div></div>
+
+<p>This shell is very helpful to play around and figure out how to extract the data. Here are some commands you can try one by one:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block"</span><span class="p">)</span>
+<span class="n">posts</span> <span class="o">=</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block"</span><span class="p">)</span>
+<span class="n">posts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">posts</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block__title__link"</span><span class="p">)</span>
+<span class="n">title</span> <span class="o">=</span> <span class="n">posts</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block__title__link"</span><span class="p">)</span>
+<span class="n">title</span>
+<span class="n">title</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">"::attr(href)"</span><span class="p">).</span><span class="n">extract</span><span class="p">()</span>
+<span class="n">title</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">"::attr(href)"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>We are using CSS selectors, and the <code class="language-plaintext highlighter-rouge">attr</code> function on CSS3 pseudo-elements.
+Learn more about this extraction part in the <a href="https://doc.scrapy.org/en/latest/topics/selectors.html">scrapy docs</a>.</p>
+
+<h2 id="scrapy-architecture">Scrapy architecture</h2>
+
+<p><img src="/images/scrapy_architecture.png" alt="scrapy architecture" /></p>
+
+<p>This diagram  from <a href="https://doc.scrapy.org/en/0.10.3/topics/architecture.html">scrapy docs</a> is a quick overview of how Scrapy works:</p>
+<ul>
+  <li>The <span style="color:#DC2300;">Spider</span> yields <span style="color:#8AAF59">Requests</span>, which are sent to the <span style="color:#CCCCFF">Scheduler</span>.</li>
+  <li>The <span style="color:#CCCCFF">Scheduler</span> sends <span style="color:#8AAF59">Requests</span> to the <span style="color:#E6E64C">Downloader</span>, which executes them against the distant website.</li>
+  <li>The <span style="color:#8AAF59">Responses</span> are sent to the <span style="color:#DC2300;">Spider</span> for parsing.</li>
+  <li>The <span style="color:#DC2300;">Spider</span> parses and yields Items, which are sent to the <span style="color:#FF9966">Item Pipeline</span>.</li>
+  <li>The <span style="color:#FF9966">Item Pipeline</span> is responsible for processing them and storing them.</li>
+</ul>
+
+<p>In this tutorial, we will not touch the <span style="color:#CCCCFF">Scheduler</span>, nor the <span style="color:#E6E64C">Downloader</span>.</p>
+
+<p>We will only write a <span style="color:#DC2300;">Spider</span> and tweak the <span style="color:#FF9966">Item Pipeline</span>.</p>
+
+<h2 id="scrape-the-list-pages">Scrape the list pages</h2>
+
+<p>So let’s write the first part of the scraper:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># spiders/techcrunch.py
+</span>
+<span class="kn">import</span> <span class="nn">scrapy</span>
+
+
+<span class="k">class</span> <span class="nc">TechcrunchSpider</span><span class="p">(</span><span class="n">scrapy</span><span class="p">.</span><span class="n">Spider</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s">'techcrunch'</span>
+    <span class="n">allowed_domains</span> <span class="o">=</span> <span class="p">[</span><span class="s">'techcrunch.com'</span><span class="p">]</span>
+    <span class="n">start_urls</span> <span class="o">=</span> <span class="p">[</span><span class="s">'https://techcrunch.com/'</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block"</span><span class="p">):</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">post</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block__title__link"</span><span class="p">)</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="n">title</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">"::attr(href)"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">()</span>
+            <span class="k">yield</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="p">.</span><span class="n">parse_post</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".load-more"</span><span class="p">):</span>
+            <span class="n">next_page_url</span> <span class="o">=</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".load-more::attr(href)"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">()</span>
+            <span class="k">yield</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Request</span><span class="p">(</span><span class="n">next_page_url</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">parse_post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="k">pass</span>
+</code></pre></div></div>
+
+<p>Here is a walkthrough of this spider:</p>
+
+<ul>
+  <li>It starts by scraping the start url https://techcrunch.com/</li>
+  <li>It goes through all posts blocks, extracts the link, and enqueues a new request.
+This new request will use a different callback from the default one: <code class="language-plaintext highlighter-rouge">parse_post</code></li>
+  <li>After going through all the posts, it looks for a next page link, and if it finds it, it enqueues a new request with that link.
+This request will use the default callback <code class="language-plaintext highlighter-rouge">parse</code></li>
+</ul>
+
+<p>You can run it with <code class="language-plaintext highlighter-rouge">scrapy crawl techcrunch</code>, but be aware that it will go through ALL the pages (thousands here), so be ready to hit <code class="language-plaintext highlighter-rouge">CTRL+C</code> to stop it!</p>
+
+<h2 id="add-a-pages-limit-argument">Add a pages limit argument</h2>
+
+<p>In order to avoid this problem, let’s add a pages limit argument to our spider right now:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># spiders/techcrunch.py
+</span>
+<span class="kn">import</span> <span class="nn">scrapy</span>
+<span class="kn">import</span> <span class="nn">re</span>
+
+
+<span class="k">class</span> <span class="nc">TechcrunchSpider</span><span class="p">(</span><span class="n">scrapy</span><span class="p">.</span><span class="n">Spider</span><span class="p">):</span>
+    <span class="c1"># ...
+</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit_pages</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TechcrunchSpider</span><span class="p">,</span> <span class="bp">self</span><span class="p">).</span><span class="n">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">limit_pages</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">.</span><span class="n">limit_pages</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">limit_pages</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="p">.</span><span class="n">limit_pages</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="c1"># ...
+</span>        <span class="k">if</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".load-more"</span><span class="p">):</span>
+            <span class="n">next_page_url</span> <span class="o">=</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".load-more::attr(href)"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">()</span>
+            <span class="c1"># urls look like https://techcrunch.com/page/4/
+</span>            <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="p">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s">".*\/page\/(\d+)\/"</span><span class="p">,</span> <span class="n">next_page_url</span><span class="p">)</span>
+            <span class="n">next_page_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="p">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">next_page_number</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="p">.</span><span class="n">limit_pages</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Request</span><span class="p">(</span><span class="n">next_page_url</span><span class="p">)</span>
+    <span class="c1"># ...
+</span></code></pre></div></div>
+
+<p>In the constructor, we allow passing a new kwarg called limit_pages, which we cast to an integer.
+In the <code class="language-plaintext highlighter-rouge">parse</code> method, we extract the next page number thanks to a regex on the url. Then we compare it to the <code class="language-plaintext highlighter-rouge">limit_pages</code> argument, and only if it’s below, we enqueue the next page request.</p>
+
+<p>You can now run the spider safely with:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy crawl techcrunch <span class="nt">-a</span> <span class="nv">limit_pages</span><span class="o">=</span>2
+</code></pre></div></div>
+
+<h2 id="scrape-the-post-pages">Scrape the post pages</h2>
+
+<p>So far, we have left the <code class="language-plaintext highlighter-rouge">scrape_post</code> request empty, so our spider is not actually scraping anything.
+Here is what post pages look like (again, without JS):</p>
+
+<p><img src="/images/techcrunch-post.png" alt="a Techcrunch post page" /></p>
+
+<p>Before writing the scraper method, we need to declare the items that we are going to scrape:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># items.py
+</span><span class="kn">import</span> <span class="nn">scrapy</span>
+
+<span class="k">class</span> <span class="nc">BlogPost</span><span class="p">(</span><span class="n">scrapy</span><span class="p">.</span><span class="n">Item</span><span class="p">):</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Field</span><span class="p">()</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Field</span><span class="p">()</span>
+    <span class="n">author</span> <span class="o">=</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Field</span><span class="p">()</span>
+    <span class="n">content</span> <span class="o">=</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Field</span><span class="p">()</span>
+    <span class="n">published_at</span> <span class="o">=</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Field</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p><em>Note: There is now a <a href="https://stackoverflow.com/a/5077350">simple way</a> to have a dynamic schema without manually declaring all the fields.
+I will show how to use it in a next article</em></p>
+
+<p>You can open a new Scrapy shell to play around on any post page and figure out the selectors you are going to use.
+For example:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy shell https://techcrunch.com/2017/05/01/awesomeness-is-launching-a-news-division-aimed-at-gen-z/
+</code></pre></div></div>
+
+<p>And once you have figured them out, you can write the scraper’s missing method:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># spiders/techcrunch.py
+</span>
+<span class="kn">from</span> <span class="nn">tc_scraper.items</span> <span class="kn">import</span> <span class="n">BlogPost</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+
+
+<span class="k">class</span> <span class="nc">TechcrunchSpider</span><span class="p">(</span><span class="n">scrapy</span><span class="p">.</span><span class="n">Spider</span><span class="p">):</span>
+
+    <span class="c1"># ...
+</span>
+    <span class="k">def</span> <span class="nf">parse_post</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">BlogPost</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">"h1::text"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">(),</span>
+            <span class="n">author</span><span class="o">=</span><span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".article__byline&gt;a::text"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">().</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="n">published_at</span><span class="o">=</span><span class="bp">self</span><span class="p">.</span><span class="n">extract_post_date</span><span class="p">(</span><span class="n">response</span><span class="p">),</span>
+            <span class="n">content</span><span class="o">=</span><span class="bp">self</span><span class="p">.</span><span class="n">extract_content</span><span class="p">(</span><span class="n">response</span><span class="p">),</span>
+            <span class="n">url</span><span class="o">=</span><span class="n">response</span><span class="p">.</span><span class="n">url</span>
+        <span class="p">)</span>
+        <span class="k">yield</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">extract_post_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">date_text</span> <span class="o">=</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">"meta[name='sailthru.date']::attr(content)"</span><span class="p">).</span><span class="n">extract_first</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="p">.</span><span class="n">datetime</span><span class="p">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">date_text</span><span class="p">,</span> <span class="s">"%Y-%m-%d %H:%M:%S"</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">extract_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="n">paragraphs_texts</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">p</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">" ::text"</span><span class="p">).</span><span class="n">extract</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".article-content&gt;p"</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">paragraphs</span> <span class="o">=</span> <span class="p">[</span><span class="s">""</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paragraphs_texts</span><span class="p">]</span>
+        <span class="n">paragraphs</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="p">.</span><span class="n">subn</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="s">""</span><span class="p">,</span> <span class="n">p</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paragraphs</span><span class="p">]</span>
+        <span class="n">paragraphs</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paragraphs</span> <span class="k">if</span> <span class="n">p</span><span class="p">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="s">""</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s">"</span><span class="se">\n\n</span><span class="s">"</span><span class="p">.</span><span class="n">join</span><span class="p">(</span><span class="n">paragraphs</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>So what’s going here?</p>
+
+<ul>
+  <li>We instanciate a <code class="language-plaintext highlighter-rouge">BlogPost</code> item that we then yield, that’s the Scrapy way.</li>
+  <li>Most of the fields are straightforward, so we write their selectors inline.
+Some others are more complicated so we have extracted them to independent methods.</li>
+  <li>The <code class="language-plaintext highlighter-rouge">published_at</code> field is a bit tricky because in the visible DOM there is no plain text datetime, only a vague ‘X hours/days ago’.
+If you inspect the DOM closely, you will find this meta <code class="language-plaintext highlighter-rouge">sailthru.date</code> that is easy to use and parse.</li>
+  <li>The <code class="language-plaintext highlighter-rouge">extract_content</code> method is quite involved, but it’s really not key to this article’s objective.
+We are basically joining the texts from the different paragraphs in a way that’s human readable.
+Because the content is actually HTML, we are losing some infos in the process, like the links and images.</li>
+</ul>
+
+<p>You can now run the spider with:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy crawl techcrunch <span class="nt">-a</span> <span class="nv">limit_pages</span><span class="o">=</span>2 <span class="nt">-o</span> posts.json
+</code></pre></div></div>
+
+<p>and Scrapy will generate a nice <code class="language-plaintext highlighter-rouge">posts.json</code> file with all the scraped items. Yay!</p>
+
+<p><img src="/images/cat_posts_json.png" alt="display posts.json contents" /></p>
+
+<h1 id="incremental-scraping"><a name="incremental"></a>Incremental Scraping</h1>
+
+<h2 id="store-items-in-mongodb">Store items in MongoDB</h2>
+
+<p>So in the last step we exported the items to a JSON file.
+For long term storage and re-use, it’s more convenient to use a database.
+We will use MongoDB here, but you could use a regular SQL database too.
+I personally find it convenient on scraping projects to use a NoSQL database because of the frequent schema changes, especially as you initially iterate on the scraper.</p>
+
+<p>If you are on Mac OS X, these commands will install MongoDB server and start it as a service:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>brew <span class="nb">install </span>mongodb
+brew services start mongodb
+</code></pre></div></div>
+
+<p>We are going to create a Scrapy pipeline so that each yielded item will get saved to MongoDB.
+This process is well documented in <a href="https://doc.scrapy.org/en/latest/topics/item-pipeline.html?highlight=mongo#write-items-to-mongodb">Scrapy’s docs</a>.</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># pipelines.py
+</span>
+<span class="kn">import</span> <span class="nn">pymongo</span>
+
+
+<span class="k">class</span> <span class="nc">MongoPipeline</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="n">collection_name</span> <span class="o">=</span> <span class="s">'tc_posts'</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mongo_uri</span><span class="p">,</span> <span class="n">mongo_db</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_uri</span> <span class="o">=</span> <span class="n">mongo_uri</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_db</span> <span class="o">=</span> <span class="n">mongo_db</span>
+
+    <span class="o">@</span><span class="nb">classmethod</span>
+    <span class="k">def</span> <span class="nf">from_crawler</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">crawler</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span>
+            <span class="n">mongo_uri</span><span class="o">=</span><span class="n">crawler</span><span class="p">.</span><span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'MONGO_URI'</span><span class="p">),</span>
+            <span class="n">mongo_db</span><span class="o">=</span><span class="n">crawler</span><span class="p">.</span><span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'MONGO_DATABASE'</span><span class="p">,</span> <span class="s">'tc_scraper'</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">open_spider</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">pymongo</span><span class="p">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">mongo_uri</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">db</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">[</span><span class="bp">self</span><span class="p">.</span><span class="n">mongo_db</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">close_spider</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">process_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">db</span><span class="p">[</span><span class="bp">self</span><span class="p">.</span><span class="n">collection_name</span><span class="p">].</span><span class="n">insert_one</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">item</span>
+</code></pre></div></div>
+
+<p>and activate it in the settings:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># settings.py
+</span>
+<span class="n">ITEM_PIPELINES</span> <span class="o">=</span> <span class="p">{</span>
+   <span class="s">'tc_scraper.pipelines.MongoPipeline'</span><span class="p">:</span> <span class="mi">300</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>Last step is to install the new <code class="language-plaintext highlighter-rouge">pymongo</code> dependency:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>pip3 <span class="nb">install </span>pymongo
+</code></pre></div></div>
+
+<p>You can now re-run the spider:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>scrapy crawl techcrunch -a limit_pages=2
+</code></pre></div></div>
+
+<p>Feel free to open a mongo shell and check that the items were indeed inserted:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mongo localhost/tc_scraper
+<span class="o">&gt;</span> db.tc_posts.count<span class="o">()</span>
+40
+<span class="o">&gt;</span> db.tc_posts.findOne<span class="o">()</span>
+<span class="o">{</span>
+	<span class="s2">"_id"</span>: ObjectId<span class="o">(</span><span class="s2">"5c09294a7fa9c70f84e43322"</span><span class="o">)</span>,
+	<span class="s2">"url"</span>: <span class="s2">"https://techcrunch.com/2018/12/06/looker-looks-to-future-with-103m-investment-on-1-6b-valuation/"</span>,
+	<span class="s2">"author"</span>: <span class="s2">"Ron Miller"</span>,
+
+  ...
+</code></pre></div></div>
+
+<h2 id="update-existing-items">Update existing items</h2>
+
+<p>If you run the spider again, you will notice that you now have 80 items in your database.
+Let’s update the Pipeline so that it does not insert a new post each time, but rather updates the existing one if it already exists.</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># pipelines.py
+</span>
+<span class="p">...</span>
+
+    <span class="k">def</span> <span class="nf">process_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">db</span><span class="p">[</span><span class="bp">self</span><span class="p">.</span><span class="n">collection_name</span><span class="p">].</span><span class="n">find_one_and_update</span><span class="p">(</span>
+            <span class="p">{</span><span class="s">"url"</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s">"url"</span><span class="p">]},</span>
+            <span class="p">{</span><span class="s">"$set"</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">item</span><span class="p">)},</span>
+            <span class="n">upsert</span><span class="o">=</span><span class="bp">True</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">item</span>
+</code></pre></div></div>
+
+<p>Here we are using the url as the key, because unfortunately there does not seem to be a more canonical ID in the DOM.
+It should work as long as Techcrunch does not change their posts slugs or published dates often.</p>
+
+<p>You can drop all items and re-run the spider twice:</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s2">"db.tc_posts.drop();"</span> | mongo localhost/tc_scraper
+scrapy crawl techcrunch <span class="nt">-a</span> <span class="nv">limit_pages</span><span class="o">=</span>2
+scrapy crawl techcrunch <span class="nt">-a</span> <span class="nv">limit_pages</span><span class="o">=</span>2
+<span class="nb">echo</span> <span class="s2">"db.tc_posts.count();"</span> | mongo localhost/tc_scraper
+</code></pre></div></div>
+
+<p>You should now have only 40 items in the database.</p>
+
+<p><em>Note: If you are scared about running so many requests against Techcrunch.com, be aware that by default, Scrapy will use a <a href="https://doc.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.httpcache">cache</a>.
+For most requests, it will not re-run them every single time, but instead re-use the previous response</em></p>
+
+<h2 id="limit-crawls-to-new-items">Limit crawls to new items</h2>
+
+<p>So far our solution is almost complete, but it will re-scrape all items every time you start it.
+In this step, we will make sure that we don’t re-scrape items uselessly, in order to have faster scraping sessions, and to limit our requests rate to the website.</p>
+
+<p>What we will do is to update the spider so that it prevents requests to items that were already scraped before and are in the database.</p>
+
+<p>First let’s extract the MongoDB connection logic from the pipeline in order to re-use it in the spider:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># mongo_provider.py (new file)
+</span>
+<span class="kn">import</span> <span class="nn">pymongo</span>
+
+
+<span class="k">class</span> <span class="nc">MongoProvider</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="n">collection_name</span> <span class="o">=</span> <span class="s">'tc_posts'</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uri</span><span class="p">,</span> <span class="n">database</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_uri</span> <span class="o">=</span> <span class="n">uri</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_db</span> <span class="o">=</span> <span class="n">database</span> <span class="ow">or</span> <span class="s">'tc_scraper'</span>
+
+    <span class="k">def</span> <span class="nf">get_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">pymongo</span><span class="p">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="p">.</span><span class="n">mongo_uri</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">[</span><span class="bp">self</span><span class="p">.</span><span class="n">mongo_db</span><span class="p">][</span><span class="bp">self</span><span class="p">.</span><span class="n">collection_name</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">close_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">client</span><span class="p">.</span><span class="n">close</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>and update the pipeline accordingly:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># pipelines.py
+</span>
+<span class="kn">from</span> <span class="nn">tc_scraper.mongo_provider</span> <span class="kn">import</span> <span class="n">MongoProvider</span>
+
+
+<span class="k">class</span> <span class="nc">MongoPipeline</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">settings</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_provider</span> <span class="o">=</span> <span class="n">MongoProvider</span><span class="p">(</span>
+            <span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'MONGO_URI'</span><span class="p">),</span>
+            <span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'MONGO_DATABASE'</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="o">@</span><span class="nb">classmethod</span>
+    <span class="k">def</span> <span class="nf">from_crawler</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">crawler</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="n">crawler</span><span class="p">.</span><span class="n">settings</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">open_spider</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">mongo_provider</span><span class="p">.</span><span class="n">get_collection</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">close_spider</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_provider</span><span class="p">.</span><span class="n">close_connection</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">process_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">spider</span><span class="p">):</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">collection</span><span class="p">.</span><span class="n">find_one_and_update</span><span class="p">(</span>
+            <span class="p">{</span><span class="s">"url"</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s">"url"</span><span class="p">]},</span>
+            <span class="p">{</span><span class="s">"$set"</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">item</span><span class="p">)},</span>
+            <span class="n">upsert</span><span class="o">=</span><span class="bp">True</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">item</span>
+</code></pre></div></div>
+
+<p><em>You can re-run the scraper at this checkpoint, nothing should have changed</em></p>
+
+<p>We can now update the spider so that it uses this mongo provider:</p>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1"># spiders/techcrunch.py
+</span>
+<span class="p">...</span>
+<span class="kn">from</span> <span class="nn">tc_scraper.mongo_provider</span> <span class="kn">import</span> <span class="n">MongoProvider</span>
+
+
+<span class="k">class</span> <span class="nc">TechcrunchSpider</span><span class="p">(</span><span class="n">scrapy</span><span class="p">.</span><span class="n">Spider</span><span class="p">):</span>
+    <span class="p">...</span>
+    <span class="o">@</span><span class="nb">classmethod</span>
+    <span class="k">def</span> <span class="nf">from_crawler</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">crawler</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">'mongo_uri'</span><span class="p">]</span> <span class="o">=</span> <span class="n">crawler</span><span class="p">.</span><span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">"MONGO_URI"</span><span class="p">)</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">'mongo_database'</span><span class="p">]</span> <span class="o">=</span> <span class="n">crawler</span><span class="p">.</span><span class="n">settings</span><span class="p">.</span><span class="n">get</span><span class="p">(</span><span class="s">'MONGO_DATABASE'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">(</span><span class="n">TechcrunchSpider</span><span class="p">,</span> <span class="n">cls</span><span class="p">).</span><span class="n">from_crawler</span><span class="p">(</span><span class="n">crawler</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit_pages</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">mongo_uri</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">mongo_database</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="p">...</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">mongo_provider</span> <span class="o">=</span> <span class="n">MongoProvider</span><span class="p">(</span><span class="n">mongo_uri</span><span class="p">,</span> <span class="n">mongo_database</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">collection</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">mongo_provider</span><span class="p">.</span><span class="n">get_collection</span><span class="p">()</span>
+        <span class="n">last_items</span> <span class="o">=</span> <span class="bp">self</span><span class="p">.</span><span class="n">collection</span><span class="p">.</span><span class="n">find</span><span class="p">().</span><span class="n">sort</span><span class="p">(</span><span class="s">"published_at"</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">).</span><span class="n">limit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">.</span><span class="n">last_scraped_url</span> <span class="o">=</span> <span class="n">last_items</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">"url"</span><span class="p">]</span> <span class="k">if</span> <span class="n">last_items</span><span class="p">.</span><span class="n">count</span><span class="p">()</span> <span class="k">else</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="n">response</span><span class="p">.</span><span class="n">css</span><span class="p">(</span><span class="s">".post-block"</span><span class="p">):</span>
+            <span class="p">...</span>
+            <span class="k">if</span> <span class="n">url</span> <span class="o">==</span> <span class="bp">self</span><span class="p">.</span><span class="n">last_scraped_url</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s">"reached last item scraped, breaking loop"</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">scrapy</span><span class="p">.</span><span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="bp">self</span><span class="p">.</span><span class="n">parse_post</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Here is a quick breakdown of what we are doing here:</p>
+
+<ul>
+  <li>In order to use the spider’s settings that contain the mongo credentials, we need to do override this <code class="language-plaintext highlighter-rouge">from_crawler</code> method. It’s quite verbose, and not very intuitive. I agree it’s annoying.</li>
+  <li>We then use these settings in the constructor to initialize a MongoDB connection thanks to our new <code class="language-plaintext highlighter-rouge">MongoProvider</code> class.</li>
+  <li>We query Mongo for the last scraped item and store it’s url.
+Here we are sorting the posts on the <code class="language-plaintext highlighter-rouge">published_at</code> descendingly, we made sure that this is consistent with Techcrunch’s sorting, or else our algorithm would not work properly.</li>
+  <li>In the parsing loop, we break and stop the scraping as soon as we reach a post with this url.
+We do it by preventing yielding the request, and breaking from the loop.</li>
+</ul>
+
+<p>You can now perform a few tests, drop some of the last items from MongoDB and re-scrape, you will see that it only scrapes the missing items and stops. Success!</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mongo localhost/tc_scraper
+<span class="o">&gt;</span> last_item <span class="o">=</span> db.tc_posts.find<span class="o">()</span>.sort<span class="o">({</span>published_at: <span class="nt">-1</span><span class="o">})[</span>0]
+<span class="o">&gt;</span> db.tc_posts.remove<span class="o">({</span>_id: last_item[<span class="s2">"_id"</span><span class="o">]})</span>
+<span class="o">&gt;</span> <span class="nb">exit
+</span>scrapy crawl techcrunch <span class="nt">-a</span> <span class="nv">limit_pages</span><span class="o">=</span>2
+</code></pre></div></div>
+
+<h1 id="conclusion">Conclusion</h1>
+
+<p>We now have a scraper that will do the least amount of work possible on each new run. I hope you enjoyed this tutorial, and that this gave you new ideas for scraping projects!</p>
+
+<p>You can find the full code for this project here on GitHub: <a href="https://github.com/adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb">adipasquale/techcrunch-incremental-scrapy-spider-with-mongodb</a>.</p>
+
+<p>You can deploy your spider to <a href="https://scrapinghub.com/scrapy-cloud">ScrapingHub cloud</a>, and schedule it to run daily on their servers.
+I’m not affiliated to them in any way, it’s just an awesome product and their free plan already does a lot.
+By the way, ScrapingHub is the main contributor to the fully open-source Scrapy project that we just used.</p>
+
+<p>To go further, you can implement a new <code class="language-plaintext highlighter-rouge">force_rescrape</code> argument, that will bypass our limit and force going through all the items again.
+This could be useful if you update the <code class="language-plaintext highlighter-rouge">scrape_post</code> method, or if Techcrunch changes their DOM structure.</p>
+
+<p>Let me know if you use this technique in one of your projects!</p>
+
+<p><a href="https://news.ycombinator.com/item?id=18697956">Discuss on Hacker News</a></p>
+
+                    ]]>
+                </content:encoded>
+                <guid isPermaLink="false">/en/2018/12/17/incremental-scraping-with-scrapy-and-mongo/</guid>
+                <description>
+                    
+                    Tutorial for crawling a website incrementally. Each new scraping session will only scrape new items.
+                    
+                </description>
+                <pubDate>Mon, 17 Dec 2018 00:00:00 -0600</pubDate>
+                <author>Adrien Di Pasquale</author>
+            </item>
+        
+    
+        
+            <item>
+                <title>Échelle des revenus en France</title>
+                <link>https://blog.dipasquale.fr/fr/2018/12/07/echelle-des-revenus-en-france/</link>
+                <content:encoded>
+                    <![CDATA[
+                    <ul>
+  <li>Édité le 25/12/2018 : <a href="https://github.com/adipasquale/blog.dipasquale.fr/commit/4b3ca1f50debad7aa1d71d3bcbe7c9dd1197ba51"><em>remarques de @Paul_Puget sur les interprétations</em></a></li>
+</ul>
+
+<p>Je me suis intéressé à tracer le graphique de l’échelle des revenus en France.
+L’idée est de pouvoir dire “si vous vivez avec tant d’argent, vous êtes mieux loti que X% des français”.</p>
+
+<p>C’est une statistique qui m’intéresse particulièrement car elle est simple à comprendre et permet de prendre du recul.
+En l’occurence, cela peut permettre de mieux comprendre la contestation des “gilets jaunes”.</p>
+
+<h1 id="résultats">Résultats</h1>
+
+<p>Avant toute chose, voici le résultat de mes analyses :</p>
+
+<p><img src="/images/fr-revenues-months.png" alt="Revenus disponibles mensuels par unité de consommation" /></p>
+
+<p>De manière simplificatrice, on peut lire ce graphique comme cela : <strong>“si vous vivez avec 2500 euros par mois, vous êtes mieux loti que 80% des français”</strong>.
+<em>Note : c’est un langage approximatif</em>.</p>
+
+<p>Pour être précis, il faut bien préciser les termes employés ici. Voici les définitions de l’INSEE :</p>
+
+<blockquote>
+  <p>Le <a href="https://www.insee.fr/fr/metadonnees/definition/c1458">revenu disponible</a> d’un ménage comprend les revenus d’activité (nets des cotisations sociales), les revenus du patrimoine, les transferts en provenance d’autres ménages et les prestations sociales (y compris les pensions de retraite et les indemnités de chômage), nets des impôts directs.</p>
+</blockquote>
+
+<blockquote>
+  <p><a href="https://www.insee.fr/fr/metadonnees/definition/c1802">L’unité de consommation</a> est un Système de pondération attribuant un coefficient à chaque membre du ménage et permettant de comparer les niveaux de vie de ménages de tailles ou de compositions différentes. Avec cette pondération, le nombre de personnes est ramené à un nombre d’unités de consommation (UC).
+Pour comparer le niveau de vie des ménages, on ne peut s’en tenir à la consommation par personne. En effet, les besoins d’un ménage ne s’accroissent pas en stricte proportion de sa taille. Lorsque plusieurs personnes vivent ensemble, il n’est pas nécessaire de multiplier tous les biens de consommation (en particulier, les biens de consommation durables) par le nombre de personnes pour garder le même niveau de vie.
+Aussi, pour comparer les niveaux de vie de ménages de taille ou de composition différente, on utilise une mesure du revenu corrigé par unité de consommation à l’aide d’une échelle d’équivalence. L’échelle actuellement la plus utilisée (dite de l’OCDE) retient la pondération suivante :</p>
+  <ul>
+    <li>1 UC pour le premier adulte du ménage ;</li>
+    <li>0,5 UC pour les autres personnes de 14 ans ou plus ;</li>
+    <li>0,3 UC pour les enfants de moins de 14 ans.</li>
+  </ul>
+</blockquote>
+
+<p>Donc, <em>en gros</em>, on parle ici de <strong>l’argent effectivement disponible dans chaque famille divisé par le nombre de personnes de manière dégressive</strong> (toutes sources confondues et après impôts).</p>
+
+<p>Les données utilisées proviennent de <a href="https://www.insee.fr/fr/statistiques/3560118">ce dossier</a> de l’INSEE paru le 19/06/2018 analysant des données de 2015 (plus de détails ci-dessous).</p>
+
+<p><em>Vous trouverez des graphiques à d’autres échelles géographiques à la <a href="#regions">fin de l’article</a>.</em></p>
+
+<h1 id="construction-de-lanalyse">Construction de l’analyse</h1>
+
+<h2 id="recherche-des-données">Recherche des données</h2>
+
+<p>Je me suis d’abord rendu sur <a href="https://www.data.gouv.fr/">Data Gouv</a> et j’ai cherché avec des mots-clés comme “revenu médian”.
+J’ai vite constaté que les résultats sont bien moins évidents que ce que j’espérais, avec parfois un langage abscons.
+De plus, les liens pointant vers des données de l’INSEE sont en partie cassés et redirigent vers la page d’accueil.</p>
+
+<p>Je me suis donc déplacé sur le site de l’INSEE pour mes recherches.
+C’est très compliqué de comprendre où chercher les informations sur ce grand site au vocabulaire nouveau pour moi.
+Il y a pléthore de documents, de fiches, de données, regroupées sous des noms d’enquêtes très larges.
+Très dur de savoir vers quoi chercher.
+J’ai alors utilisé mon joker à un ami et <a href="https://twitter.com/AntoineAugusti">@AntoineAugusti</a> m’a conseillé de ne pas hésiter à écrire à l’INSEE pour qu’ils m’aiguillent.</p>
+
+<p>J’ai donc envoyé un message depuis le formulaire de contact et j’ai effectivement reçu une réponse très efficace sous quelques jours :</p>
+
+<blockquote>
+  <p>Bonjour,</p>
+
+  <p>Vous trouverez la ventilation des revenus disponibles par commune,sous la rubrique Statistique, en sélectionnant les critères suivants :
+thèmes : Revenus – Pouvoir d’achat – Consommation &gt; Revenus – Niveaux de vie – Pouvoir d’achat
+catégories : Données &gt; Bases de données</p>
+
+  <p>Les données sont accessibles sur la page <a href="https://www.insee.fr/fr/statistiques/3560118">Structure et distribution des revenus, inégalité des niveaux de vie en 2015</a>, puis dans le fichier “Base niveau communes en 2015 - y compris arrondissements municipaux”. Vous devez ensuite choisir le fichier “FILO_DISP_COM.xls”. La distribution par décile se situe dans l’onglet “ensemble”.</p>
+</blockquote>
+
+<p>Cette réponse a été quasiment parfaite pour mon usage et m’a débloqué pour la suite !</p>
+
+<h2 id="retour-sur-la-recherche-de-données">Retour sur la recherche de données</h2>
+
+<p>Mon sentiment sur cette recherche de données est partagé.</p>
+
+<p>D’un côté je suis ébahi par la quantité et la qualité des données accessibles librement.
+Et aussi par la réponse parfaite dans un temps raisonnable de l’INSEE à une demande d’un particulier.</p>
+
+<p>D’un autre côté, je trouve ça dommage d’avoir à faire une demande de support pour une recherche de statistique qui me paraît relativement “basique”.
+L’expérience aurait été bien meilleure si j’avais réussi à trouver moi-même ce que je cherchais.
+C’est dommage que l’intégration de Data Gouv avec l’INSEE ne fonctionne pas, et je pense que beaucoup de choses pourraient être faites pour améliorer la recherche et l’exploration au sein du site de l’INSEE. Ça m’a d’ailleurs donné l’idée d’ouvrir un site mirroir … plus dans un autre post !</p>
+
+<p>Surtout, je pense que je n’aurais jamais envoyé un message de support à l’INSEE si mon ami qui connaît le milieu ne me l’avait suggéré.
+Je ne me serais pas senti légitime, et/ou je n’aurais jamais pensé recevoir une réponse aussi efficace rapidement.</p>
+
+<h2 id="construction-du-graphique">Construction du graphique</h2>
+
+<p>Ça a été l’occasion pour moi de re-découvrir pandas, que je n’avais pas utilisé depuis longtemps.
+J’ai aussi pu utiliser Jupyter, le successeur de iPython Notebook, que je ne connaissais pas.</p>
+
+<p>La bonne surprise a été de voir que l’installation de cet environnement complet de stats (numpy, pandas, Jupyter …) sur mon OS X s’est fait avec 3 commandes <code class="language-plaintext highlighter-rouge">pip3 install</code>, sans aucun problème. J’ai des souvenirs de cauchemards de dépendances ininstallables il y a quelques années.</p>
+
+<p>Dans un premier temps, j’ai travaillé sur le fichier indiqué par le support de l’INSEE qui contient les données à l’échelle communale. J’ai voulu faire une moyenne des déciles, avant de me rendre compte que c’était probablement une erreur statistique. J’ai alors pensé pondérer les moyennes avec la population de chaque commune. Intuitivement, impossible de me décider sur la validité d’une telle opération : <strong>est-ce qu’on peut découper un ensemble en sous-ensembles, calculer les déciles sur ces sous-ensembles, et en faire la moyenne pondérée pour retomber sur les déciles de l’ensemble global ?</strong>. Je n’ai pas trouvé la réponse sur internet, donc j’ai fait des simulations dans un autre notebook pour me faire une idée. Et ça n’a pas l’air valide, on ne retombe pas sur les mêmes valeurs ! vous pouvez jouer avec ce notebook de tests <a href="https://mybinder.org/v2/gh/adipasquale/france-income-disparities-2015/master?filepath=check%20weighted%20percentiles.ipynb">sur Binder</a> si ça vous intéresse.</p>
+
+<p>J’ai alors sorti le nez du guidon, pour me rendre compte qu’il y avait un jeu de données voisin à échelle plus haute, notamment à l’échelle nationale <code class="language-plaintext highlighter-rouge">FILO_DISP_METROPOLE.xls</code>. C’est beaucoup plus facile comme ça !</p>
+
+<p>Le reste est un “jeu d’enfants” qui m’a quand même pris quelques heures pour me rappeler comment manipuler les DataFrame et le plotting.</p>
+
+<p>Vous pouvez trouver le code source du Notebook Jupyter sur <a href="https://github.com/adipasquale/france-income-disparities-2015">GitHub</a>, et aussi en lancer une version interactive avec Binder <a href="https://mybinder.org/v2/gh/adipasquale/france-income-disparities-2015/master?filepath=revenus%20disponibles%20france%20metropolitaine%20-%20deciles.ipynb">en suivant ce lien</a>.</p>
+
+<h1 id="par-région-et-par-commune"><a name="regions"></a>Par région et par commune</h1>
+
+<p>Dans les données disponibles, on a le détail à différentes échelles, dont l’échelle régionale et l’échelle communale.</p>
+
+<h2 id="par-région">Par région</h2>
+
+<p>Voici ce que ça donne région par région :</p>
+
+<p><img src="/images/fr-revenues-regions-all.png" alt="Revenus disponibles mensuels par unité de consommation par région" /></p>
+
+<p>C’est un peu illisible, j’ai isolé de manière un peu arbitraire les extrêmes  :</p>
+
+<p><img src="/images/fr-revenues-regions-filtered.png" alt="Revenus disponibles mensuels par unité de consommation par région, seulement les extrêmes" /></p>
+
+<p>On voit des différences de répartition importantes et surtout des inégalités de niveaux de vie très marquées.</p>
+
+<h2 id="au-sein-de-paris">Au sein de Paris</h2>
+
+<p>Ensuite, j’ai regardé à l’échelle des communes. On ne peut évidemment pas envisager de tracer le graphique pour les 36000 communes françaises et quelques, il faut donc faire des choix.</p>
+
+<p>J’ai d’abord regardé les différences entre les différents arrondissements de Paris. Avec 20 arrondissements, le graphique est illisible, le voici avec les 4 arrondissements ayant respectivement les 2 taux d’inégalités les plus forts et les plus faibles (mesurés par <a href="https://www.insee.fr/fr/metadonnees/definition/c1551">l’indice de Gini</a>).</p>
+
+<p><img src="/images/fr-revenues-paris.png" alt="Revenus disponibles mensuels par unité de consommation par région" /></p>
+
+<p>Et non, ce n’est pas le 16ème qui a le plus haut taux d’inégalité, mais bien le 7ème ! (le 16ème est 3ème). Les différences sont extrèmement marquées avec les deux arrondissements à l’extrême opposé. On note que le 1er décile est quasiment identique : les ménages ayant le moins de revenu en ont à peu près autant dans le 7ème que dans le 20ème. Et on voit aussi de manière flagrante que <strong>les ménages ayant le plus de revenus en ont environ 3 fois plus à Paris 7ème qu’à Paris 20ème</strong>.</p>
+
+<p><strong>Mise à jour</strong>: <a href="https://twitter.com/Paul_Puget">@Paul_Puget</a> m’a fait remarquer que mon interprétation est erronée. On peut effectivement lire que le dernier décile est environ trois fois plus élevé. On ne peut cependant pas en tirer de conclusions sur les revenus moyens de ces 10% de gens les plus riches. Il n’est pas impossible que le revenu moyen dans ce dernier décile soit plus élevé dans le 20ème que dans le 7ème, cf <a href="https://imgur.com/a/adr4V8Y">ce petit schéma à la main</a>.</p>
+
+<h2 id="par-ville">Par ville</h2>
+
+<p>Enfin j’ai regardé les communes à l’échelle nationale. J’ai filtré les données pour voir les grandes villes uniquement, en utilisant cette règle : “nombre de personnes dans les ménages fiscaux supérieur à 100000”.</p>
+
+<p>Voici un graphique représentant 5 villes choisies arbitrairement pour représenter la “palette” de répartition des revenus : Paris (taux d’inégalité le plus fort), Marseille, Brest (taux d’inégalité le plus faible), Toulouse et Lyon.</p>
+
+<p><img src="/images/fr-revenues-cities.png" alt="Revenus disponibles mensuels par unité de consommation par communes" /></p>
+
+<p>Là encore, on voit un schéma similaire, c’est-à-dire que les écarts se produisent principalement dans les déciles les plus hauts. Je pense que l’on peut lire cela comme ça : <strong>“Les écarts de répartitions des richesses dans les grandes villes françaises se concentrent dans les classes les plus aisées”.</strong></p>
+
+<p><strong>Mise à jour</strong>: Ici encore, <a href="https://twitter.com/Paul_Puget">@Paul_Puget</a> a relevé que cette interprétation est un peu hâtive. Le graphique permet de voir l’évolution selon les différents déciles des écarts absolus de revenus entre les différentes villes. Mais on ne peut pas vraiment y lire l’évolution des rapports entre ces revenus de différentes villes. Peut-être que le rapport entre les revenus disponibles à Marseille et à Paris et le même pour le premier décile et le dernier, par exemple 0,8. On peut difficilement le lire sur ce graphique en tout cas.</p>
+
+<h1 id="conclusion">Conclusion</h1>
+
+<p>J’espère que comme moi vous avez appris des choses, et surtout que ça vous a donné envie d’en savoir plus. Je vous invite à visiter le site de <a href="https://www.insee.fr/">l’INSEE</a> et celui de <a href="https://www.data.gouv.fr/">Data Gouv</a> pour chercher des données intéressantes. J’ai plein d’idées pour d’autres analyses, notamment avec l’indice de Gini, si ça vous intéresse suivez-moi sur Twitter : <a href="https://twitter.com/hypertextadrien">@hypertextadrien</a>.</p>
+
+<p>Et surtout n’hésitez pas à me contacter si vous avez des questions, ou si vous avez repéré des erreurs dans les manipulations de données ou dans mes interprétations !</p>
+
+                    ]]>
+                </content:encoded>
+                <guid isPermaLink="false">/fr/2018/12/07/echelle-des-revenus-en-france/</guid>
+                <description>
+                    
+                    Je me suis intéressé à tracer le graphique de l'échelle des revenus en France. L'idée est de pouvoir dire &quot;si vous vivez avec tant d'argent, vous êtes mieux loti que X% des français&quot;.
+                    
+                </description>
+                <pubDate>Fri, 07 Dec 2018 00:00:00 -0600</pubDate>
+                <author>Adrien Di Pasquale</author>
+            </item>
+        
+    
+        
+            <item>
+                <title>Leave Gmail in 10 steps</title>
+                <link>https://blog.dipasquale.fr/en/2018/12/02/leave-gmail-in-10-steps/</link>
+                <content:encoded>
+                    <![CDATA[
+                    <ul>
+  <li>updated on 25/12/2018 : <a href="https://github.com/adipasquale/blog.dipasquale.fr/commit/93819a06f0551f01ec4304ba76c83705f38fbb36"><em>added link to Fastmail’s post about AABill</em></a></li>
+</ul>
+
+<blockquote>
+  <p>In exchange for free mails, would you let your postman open your letters, read them, and insert ads related to their contents?</p>
+</blockquote>
+
+<p>This is a common analogy for Gmail’s model. The privacy implications of using Gmail actually go much farther than that, because Gmail is not only your postman (with Gmail), it also owns your car ( your web browser), your address book (with Search), your TV (with YouTube), it’s a great land owner (with AdSense)… And there are many reasons not to trust Google, <a href="http://precursorblog.com/?q=content/googles-top-35-privacy-scandals">especially with your privacy</a>.</p>
+
+<p><strong>Important edit</strong>: As many commenters pointed out, this analogy is actually not correct anymore, as <a href="https://techcentral.co.za/google-will-stop-reading-e-mail/75215/">Google stopped reading your emails for ad-personalization</a> in 2017, sorry I missed that news. However, they <a href="https://theoutline.com/post/4524/remember-when-google-said-it-would-stop-reading-your-email">do still read</a> them in order to “customize search results, better detect spam and malware”.</p>
+
+<p>Migrating away from any email service, like changing addresses in real world life, is always going to be tedious. I did not find that Gmail makes it particularly harder, but I hope this guide can help you.</p>
+
+<p>Disclaimer : This guide will not help you find alternatives for the Gmail-specific features, like labels, snoozing, bundles, suggested replies and so on.</p>
+
+<p><img src="/images/leaving.unsplash.png" alt="Photo by Mantas Hesthaven on Unsplash" /></p>
+
+<h2 id="step-1--get-a-new-mail-address-and-provider">Step 1 : Get a new mail address and provider</h2>
+
+<p>First, I strongly suggest you buy a domain name, so that you really own your mail address, and don’t depend on any service. You can purchase one at <a href="https://www.gandi.net/">Gandi</a>.</p>
+
+<p>From there on, you could use Gandi’s mail servers, but I recommend you use <a href="https://fastmail.com/">Fastmail’s</a>. It’s not free, but it will be much simpler to setup, faster, they provide push notifications for mobile, their spam filter is better, their web interface is better, and it’s the most popular privacy-respecting service.</p>
+
+<p><strong>Edit</strong>: I am not affiliated to Fastmail in any way, and I do not want this article to look like an ad!
+Also, as <a href="https://news.ycombinator.com/item?id=18633216">HN commenters</a> and <a href="https://twitter.com/mediafinger/status/1071325185364672513">@mediafinger</a> pointed out, Fastmail is an Australian company, where they just passed <a href="https://www.nytimes.com/2018/12/06/world/australia/encryption-bill-nauru.html">a new bill</a>, which is concerning for privacy.
+Fastmail stated <a href="https://fastmail.blog/2018/12/21/advocating-for-privacy-aabill-australia/">in a blog post</a>  that this law does not impact them though.
+Have a look at other privacy-caring providers like <a href="https://mailbox.org/">mailbox.org</a>, <a href="https://runbox.com/">runbox.com</a>,<a href="https://posteo.de/">posteo.de</a> and <a href="https://www.startmail.com/">startmail.com</a>, they may very well be cheaper too.</p>
+
+<p><a href="https://www.fastmail.com/signup/">Signing up with Fastmail</a> is very simple. If you bought a domain name, you can use their <a href="https://www.fastmail.com/help/receive/domains-setup-nsmx.html">easy-setup option</a> where you use their name servers and they do all the hardlifting. You will still be able to add custom DNS entries later if you want to, for your personal website or blog. If you did not buy a domain name, you can also create a mail address ending with one of theirs : sent.com, fastmail.com…</p>
+
+<h2 id="step-2--clients-setup-and-update-round">Step 2 : Clients setup and update round</h2>
+
+<p>By client, here, I mean the applications that you use to read and write mail. Gmail has both a web client (a website) and mobile apps.</p>
+
+<p>There are lots of options for mail clients. Fastmail comes with a web client too, that is quite different from Gmail and less featureful, but it works well.</p>
+
+<p><img src="/images/fastmail-web-interface.png" alt="Fastmail's web interface" /></p>
+
+<p>Windows 10+, OS X and iOS come with decent native mail clients, I suggest you start with these. Android on the other hand now has Gmail as the default mail app, so you will have to try a new one. Fastmail has some <a href="https://www.fastmail.com/help/clients/applist.html">great guides</a> for setupping these mail clients and it’s sometimes as easy as scanning a personalized QR-Code.</p>
+
+<p>You can try sending a mail from your Gmail to your new mail and check that you are receiving it on all the devices that you care about. Once you are up and running with your new address, it’s the perfect moment to try and update your mail address on the services you use daily (Social networks, Github, Amazon…). If you use a password manager it can help you identify the services you have forgot.</p>
+
+<h2 id="step-3--delete-useless-mails-from-gmail">Step 3 : Delete useless mails from Gmail</h2>
+
+<p>I strongly suggest that you take the time to clean up the clutter you have accumulated in your Gmail before anything. Here are some reasons to do so :</p>
+
+<ul>
+  <li>migrating your mails will be faster</li>
+  <li>you will not reach the storage limit on your new provider as fast</li>
+  <li>it feels good :)</li>
+</ul>
+
+<p>It’s important to do it before migrating or else you’ll be cleaning up 2 mailboxes (I did and lost a lot of time).</p>
+
+<p>Look at your space usage for mail on <a href="https://drive.Google.com/settings/storage">this Google page</a>, by clicking on the details link. If it looks reasonable, you may skip this step.</p>
+
+<p>The first way to find useless mails is easy : look for mails with big attachments. You can use this Gmail search query <code class="language-plaintext highlighter-rouge">size:5MB</code> or any other threshold.</p>
+
+<p>The second way is trickier : you want to look for redundant, similar mails : facebook notifications, Google alerts, GitHub comments… This can represent a very high number of mail and thus of space. Surprisingly I could not find a good tool to identify these mails. It cannot be done with Google queries. There is a plug-in in Thunderbird but it was very buggy for me and opening Thunderbird feels like travelling back to the 90s 😢 The best way I found was to use python’s mbox files support out of the box. I published a small script called <a href="https://github.com/adipasquale/mbox-sender-frequency">mbox-sender-frequency</a>. It lists all addresses that have sent over 100 mails to you. You can then filter and drop them on Gmail.</p>
+
+<p><img src="https://i.imgur.com/isCPq3N.png" alt="example usage of mbox-sender-frequency" /></p>
+
+<h2 id="step-4--export-your-data-from-google-and-archive-it">Step 4 : Export your data from Google and archive it</h2>
+
+<p>I have to hand it out to Google they make it quite easy to export your mails. Head to <a href="https://takeout.Google.com">Google Takeout</a> and select mails. You’ll need to have it locally so I suggest you take the download option. They’ll mail you a link once they have gathered it all in a nice mbox file.</p>
+
+<p>I suggest you store this mbox archive somewhere safe, ie. not a hard drive :) I went with S3 Cloud Storage. You want to keep this file for a long while, maybe a year or so.</p>
+
+<h2 id="step-5--migrate-all-mails">Step 5 : Migrate all mails</h2>
+
+<p>Important : <strong>do not yet use Fastmail’s Identities &amp; Fetch feature</strong>. It would be slower and less reliable at this point.</p>
+
+<p>Fastmail has a very nice Email import tool, that will fetch mail from Google’s IMAP servers and import them to your new account. To use it, follow <a href="https://www.fastmail.com/help/receive/migratemail.html">these very clear instructions by Fastmail</a>. Do use the ‘no duplicate’ checkbox, because mails with labels would be fetched multiple times otherwise.</p>
+
+<p>This step can take a while, a whole night for me. Once it’s done, do give a look at the logs as you do not want to miss anything. You should also have a look at your mails, browsing to the oldest is a good idea.</p>
+
+<h2 id="step-6--delete-all-migrated-mails-from-gmail">Step 6 : Delete all migrated mails from Gmail</h2>
+
+<p>Once you are confident you have everything on your new account and have backed up the archive file, you may go back to  and delete all your mails. That is a very thrilling step!</p>
+
+<p>Note : Because the migration process takes a while, you may have received mail to your Gmail account between steps 5 and 6, and that mail was not migrated to your new account. In that case, you may want to limit the mails you are deleting using a search filter.</p>
+
+<h2 id="step-7--synchronize-future-gmail-mails-to-fastmail">Step 7 : Synchronize future Gmail mails to Fastmail</h2>
+
+<p>You can now setup the <a href="https://www.fastmail.com/help/receive/fetchotheremail.html">Identities &amp; Fetch</a> feature with your Gmail account. All the mails received during the migration, and the future incoming ones to Gmail will now be synchronized to your new account. You can also setup a sender alias to write mails with your old Gmail address, if necessary.</p>
+
+<p>You are ready to remove the Gmail apps from all your devices, you are almost free!</p>
+
+<h2 id="step-8--monitor-mails-still-sent-to-your-gmail-account">Step 8 : Monitor mails still sent to your Gmail account</h2>
+
+<p>The idea is to reduce more and more the mails you receive to your Gmail address. To do so, you can search <code class="language-plaintext highlighter-rouge">to:youroldaddress@.com</code> on Fastmail web interface, and save it. Then, go check out the results regularly and try and make sure that you will not receive similar mails in the future.</p>
+
+<p>If it’s an automated mail from a service you use, go update your address (or unsubscribe !). If it’s from a person, then let them know you have changed your mail address.</p>
+
+<h2 id="step-9--actually-close-your-gmail-account">Step 9 : Actually close your Gmail account</h2>
+
+<p>Once you are not receiving any more mail to your Gmail address (or barely) you can take the big step and close your Gmail account.</p>
+
+<p>You can follow <a href="https://support.Google.com/accounts/answer/61177">Google’s guide</a> to do so. Some nice facts are that your address may never be used by anyone in the future, and that your Google Account will not be deleted in the same time.</p>
+
+<p>I’m a cheater : I have not actually gone through this step yet. I think I will wait at least one year in order to be sure I’m not receiving any import mail to my Gmail address.</p>
+
+<h2 id="step-10--go-the-extra-mile">Step 10 : Go the extra mile</h2>
+
+<p>While you are at it you may want to try and replace other Google services.</p>
+
+<p>Natural followers are the Calendar and Contacts apps. These are two pieces of sensitive data that you can very easily export from Google and import into your new Fastmail account. Then you can again replace the Google Calendar and Google Contacts apps with alternatives. The Apple ones have proven far good enough for my usage.</p>
+
+<p>If you want to go further, you can check the <a href="https://nomoregoogle.com/">No More Google list</a> to find popular alternatives to Google Services.</p>
+
+<p><img src="/images/nomoregoogle.png" alt="no more google" /></p>
+
+<p>I was very surprised how easy it was to stop using Google Chrome. The new Firefox is fast, almost bug free, and has all the web development tools I need. I was also using Chrome on my iPhone but I like Safari more now that I have switched. The transition was smooth and intuitive and it’s obviously better integrated with iOS.</p>
+
+<p>The only Google apps I really could not stop using are Maps and Docs. They both have features I could not find anywhere else and which I don’t want to stop using altogether.</p>
+
+<p>I hope this helps, let me know if you switch!</p>
+
+<p><em>You can comment this article on <a href="https://news.ycombinator.com/item?id=18627509">Hacker News</a></em></p>
+
+                    ]]>
+                </content:encoded>
+                <guid isPermaLink="false">/en/2018/12/02/leave-gmail-in-10-steps/</guid>
+                <description>
+                    
+                    In exchange for free mails, would you let your postman open your letters, read them, and insert ads related to their contents?
+                    
+                </description>
+                <pubDate>Sun, 02 Dec 2018 00:00:00 -0600</pubDate>
+                <author>Adrien Di Pasquale</author>
+            </item>
+        
+    
+        
+            <item>
+                <title>Designing state machines</title>
+                <link>https://blog.dipasquale.fr/en/2017/06/26/designing-state-machines/</link>
+                <content:encoded>
+                    <![CDATA[
+                    <p>This is a post I wrote while I was working at Drivy, as we were tweaking the models state machines. You can find it here : <a href="https://drivy.engineering/designing-state-machines/">https://drivy.engineering/designing-state-machines/</a>.</p>
+
+<p>As a TLDR; this post suggests :</p>
+
+<ul>
+  <li>Keep it as simple as possible</li>
+  <li>Talk with all your team-mates to understand the vocabulary</li>
+  <li>Do not over-anticipate your future needs</li>
+  <li>Store all relevant infos including the transitions from state to state</li>
+</ul>
+
+<p>I initially presented these tips as a lightning talk for the <a href="https://www.meetup.com/fr-FR/parisrb/events/rqtgrlyvkbhb/">ParisRb meetup on 05/07/2016</a>. You can find my slides here : <a href="https://adipasquale.github.io/state-machines-lightning-talk">https://adipasquale.github.io/state-machines-lightning-talk</a></p>
+
+                    ]]>
+                </content:encoded>
+                <guid isPermaLink="false">/en/2017/06/26/designing-state-machines/</guid>
+                <description>
+                    
+                </description>
+                <pubDate>Mon, 26 Jun 2017 00:00:00 -0500</pubDate>
+                <author>Adrien Di Pasquale</author>
+            </item>
+        
+    
+        
+            <item>
+                <title>Taskqueues tips</title>
+                <link>https://blog.dipasquale.fr/en/2017/03/13/taskqueues-tips/</link>
+                <content:encoded>
+                    <![CDATA[
+                    <p>I wrote a post listing a few tips to write a taskqueue while I was working at Drivy. You can find it here : <a href="https://drivy.engineering/taskqueues-tips/">https://drivy.engineering/taskqueues-tips/</a>.</p>
+
+<p>As a TLDR; this post suggests :</p>
+
+<ul>
+  <li>Writing re-entrant idempotent tasks that require the least number of arguments possible</li>
+  <li>Avoid class-level calls</li>
+  <li>Avoid mutable instance variables</li>
+  <li>Specialize your workers for more efficiency</li>
+  <li>Queues should be designed by speed and urgency, not semantically</li>
+  <li>Read carefully your message broker’s doc (Redis, RabbitMQ …) and monitor it</li>
+  <li>Also monitor your queues SLAs, your worker’s memory and exceptions, and your CRON</li>
+  <li>Check your DB connection pool</li>
+</ul>
+
+<p>I also spoke about this in a meetup talk, you can find the slides here : <a href="https://adipasquale.github.io/taskqueues-slides-2015">https://adipasquale.github.io/taskqueues-slides-2015</a></p>
+
+                    ]]>
+                </content:encoded>
+                <guid isPermaLink="false">/en/2017/03/13/taskqueues-tips/</guid>
+                <description>
+                    
+                </description>
+                <pubDate>Mon, 13 Mar 2017 00:00:00 -0500</pubDate>
+                <author>Adrien Di Pasquale</author>
+            </item>
+        
+    
+        
+            <item>
+                <title>Capsitrano Environment variables</title>
+                <link>https://blog.dipasquale.fr/en/2013/02/20/capistrano-environment-variables/</link>
+                <content:encoded>
+                    <![CDATA[
+                    <p>This is the story of an epic fight. Me (regular guy) vs the server (Rails 3, deployed via Capistrano to a Passenger – Nginx hosted Ubuntu server, using Mandrill transactional mail service). not a fair fight.</p>
+
+<p>If you already know the deal (or just don’t want to hear me whine) jump <a href="#task">there</a> for the Capistrano task that’ll magically expand your environment variables in the config.</p>
+
+<p>First if you follow Mandrill’s <a href="https://help.mandrill.com/entries/21738467-Using-Mandrill-s-SMTP-integration-with-Web-Frameworks">guide</a> (spoiler: you should not), this is what you’d set up in your config/production.rb :</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">config</span><span class="p">.</span><span class="nf">action_mailer</span><span class="p">.</span><span class="nf">smtp_settings</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="ss">:address</span>   <span class="o">=&gt;</span> <span class="s2">"smtp.mandrillapp.com"</span><span class="p">,</span>
+  <span class="ss">:port</span>      <span class="o">=&gt;</span> <span class="mi">587</span><span class="p">,</span>
+  <span class="ss">:enable_starttls_auto</span> <span class="o">=&gt;</span> <span class="kp">true</span><span class="p">,</span>
+  <span class="ss">:user_name</span> <span class="o">=&gt;</span> <span class="s2">"MANDRILL_USERNAME"</span><span class="p">,</span>
+  <span class="ss">:password</span>  <span class="o">=&gt;</span> <span class="s2">"MANDRILL_API_KEY"</span><span class="p">,</span>
+  <span class="ss">:authentication</span> <span class="o">=&gt;</span> <span class="s1">'login'</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>I know your extra picky security cerebrum already picked up the issue with this. hardcoding the username and password in your config file cannot be a good idea, especially if you’re sharing your code with many people. A better way is to use environment variables.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="ss">:user_name</span> <span class="o">=&gt;</span> <span class="no">ENV</span><span class="p">[</span><span class="s2">"MANDRILL_USERNAME"</span><span class="p">],</span>
+<span class="ss">:password</span>  <span class="o">=&gt;</span> <span class="no">ENV</span><span class="p">[</span><span class="s2">"MANDRILL_API_KEY"</span><span class="p">],</span>
+</code></pre></div></div>
+
+<p>you then have to set these variables on your prod server, in /etc/profile for example :</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">export </span><span class="nv">MANDRILL_USERNAME</span><span class="o">=</span>foo
+<span class="nb">export </span><span class="nv">MANDRILL_API_KEY</span><span class="o">=</span>bar
+</code></pre></div></div>
+
+<p>Now, it can’t be that simple, right ? right.
+Whereas my mails were not sent, the logger did not give me any errors, so first things first, I figured I’d turn the failed mail deliveries warning on in config/production.rb :</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">config</span><span class="p">.</span><span class="nf">action_mailer</span><span class="p">.</span><span class="nf">raise_delivery_errors</span> <span class="o">=</span> <span class="kp">true</span>
+</code></pre></div></div>
+
+<p>if you’re doing this live on your production server (and you should) you have to restart Passenger :</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">touch </span>tmp/restart.txt
+</code></pre></div></div>
+
+<p>And I could now see a beautiful <code class="language-plaintext highlighter-rouge">Net::SMTPServerBusy, Relay access denied error</code>. First I believed it came from a blocked 587 port, got postfix to work, and everything worked fin, hmmm. Heck, it even worked when I launched a thin server on the prod !
+This <a href="https://stackoverflow.com/questions/13963795/rails-mailer-netsmtpserverbusy">Stack Overflow</a> entry showed me the way to the problem : Passenger doesn’t set your environment variables when you fire it up.</p>
+
+<p>One solution is to load your variables in the wrapper around Ruby interpreter that Passenger uses (more info on this <a href="https://blog.rayapps.com/2008/05/21/using-mod_rails-with-rails-applications-on-oracle/">here</a>). I don’t like this idea much, it feels very hacky, what’ll happen when I’ll upgrade my Ruby for example ?</p>
+
+<p>My solution is to expand the variables in your config file during the deploy (meaning replacing ENV[“MANDRILL_USERNAME”] with the actuall username value, copied from the environment variable).
+This amazing <a href="https://stackoverflow.com/questions/1609423/using-sed-to-expand-environment-variables-inside-files#answer-1610500">SO answer</a> helped a lot, I tweaked it a bit to fit a Capistrano deploy task. It will expand ANY of your environment variables, how great is that ?!</p>
+
+<p>Warning: this is some mad-ass syntax, even the built-in highlighter can’t figure it out. There’s a LOT of escaping, between sed syntax and ruby’s …</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">desc</span> <span class="s2">"Replace environment variables with hardcoded values in config file"</span>
+<span class="n">task</span> <span class="ss">:replace_env_vars</span><span class="p">,</span> <span class="ss">roles: :app</span> <span class="k">do</span>
+  <span class="n">run</span> <span class="s2">"mv </span><span class="si">#{</span><span class="n">release_path</span><span class="si">}</span><span class="s2">/config/environments/production.rb </span><span class="si">#{</span><span class="n">release_path</span><span class="si">}</span><span class="s2">/config/environments/production.before_sed.rb"</span>
+  <span class="n">run</span> <span class="s1">'env | sed \'s/[\%]/\\&amp;amp;/g;s/\([^=]*\)=\(.*\)/s%ENV\\\[\\\"\1\\\"\\\]%\"\2\"%/\' &gt; '</span> <span class="o">+</span> <span class="s2">"</span><span class="si">#{</span><span class="n">release_path</span><span class="si">}</span><span class="s2">/script/expand_env_vars.sed.script"</span>
+  <span class="n">run</span> <span class="s2">"cat </span><span class="si">#{</span><span class="n">release_path</span><span class="si">}</span><span class="s2">/config/environments/production.before_sed.rb | sed -f </span><span class="si">#{</span><span class="n">release_path</span><span class="si">}</span><span class="s2">/script/expand_env_vars.sed.script &gt; </span><span class="si">#{</span><span class="n">release_path</span><span class="si">}</span><span class="s2">/config/environments/production.rb"</span>
+<span class="k">end</span>
+
+<span class="n">after</span> <span class="s2">"deploy:update_code"</span><span class="p">,</span> <span class="s2">"deploy:replace_env_vars"</span>
+</code></pre></div></div>
+
+<p>Note : this will only replace strings that use double quotes like <code class="language-plaintext highlighter-rouge">ENV[“JESSICA_ALBA_PHONE_NUMBER”]</code> (I gather you wouldn’t share that piece of intel with any other developer)</p>
+
+<p>Hey, lucky you ! There’s a last step, and it’s so easy it feels good. By default, the SSH session opened by Capistrano doesn’t execute your init scripts (~/.profile, ~/.bashrc, not even /etc/profile/). These are <a href="https://pretheory.wordpress.com/2008/02/12/capistrano-path-and-environment-variable-issues/">DanM instructions</a> (cheers !) to load them up. Create <code class="language-plaintext highlighter-rouge">~/.ssh/environment</code> and reput the export instructions, or you can even load your whole <code class="language-plaintext highlighter-rouge">/etc/profile</code> file, even though I have no idea what the security implications are. just don’t if you are ignorant like me.
+Tell your SSH server to load this file : add this line in <code class="language-plaintext highlighter-rouge">/etc/ssh/sshd_config</code> :</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PermitUserEnvironment yes
+</code></pre></div></div>
+
+<p>and restart it with</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo</span> /etc/init.d/ssh restart
+</code></pre></div></div>
+
+<p>That should make your day. If it does not, feel free to let out your sorrow in the comments.</p>
+
+                    ]]>
+                </content:encoded>
+                <guid isPermaLink="false">/en/2013/02/20/capistrano-environment-variables/</guid>
+                <description>
+                    
+                </description>
+                <pubDate>Wed, 20 Feb 2013 00:00:00 -0600</pubDate>
+                <author>Adrien Di Pasquale</author>
+            </item>
+        
+    
+  </channel>
+</rss>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Combining React Router and Shopify App Bridge Navigation &#8211; Adrien Di Pasquale Blog</title>
+    <link rel="dns-prefetch" href="//maxcdn.bootstrapcdn.com">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Mostly blogging about web development and Open Data">
+    <meta name="robots" content="all">
+    <meta name="author" content="Adrien Di Pasquale">
+    
+    <meta name="keywords" content="">
+    <link rel="canonical" href="https://blog.dipasquale.fr/2019/02/28/polaris-react-router/">
+    <link rel="alternate" type="application/rss+xml" title="RSS Feed for Adrien Di Pasquale Blog" href="/feed.xml" />
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/pixyll.css?202110041024" type="text/css">
+
+    <!-- Fonts -->
+    
+    <link href='//fonts.googleapis.com/css?family=Merriweather:900,900italic,300,300italic' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Lato:900,300' rel='stylesheet' type='text/css'>
+    
+    
+      <link href="//maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" rel="stylesheet">
+    
+
+    <!-- MathJax -->
+    
+
+    <!-- Verifications -->
+    
+    
+
+    <!-- Open Graph -->
+    <!-- From: https://github.com/mmistakes/hpstr-jekyll-theme/blob/master/_includes/head.html -->
+    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Combining React Router and Shopify App Bridge Navigation">
+    <meta property="og:description" content="Mostly blogging about web development and Open Data">
+    <meta property="og:url" content="https://blog.dipasquale.fr/2019/02/28/polaris-react-router/">
+    <meta property="og:site_name" content="Adrien Di Pasquale Blog">
+    
+    <meta property="og:image" content="https://blog.dipasquale.fr/images/me.jpeg">
+    
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary" />
+    
+        <meta name="twitter:site" content="@hypertextadrien" />
+        <meta name="twitter:creator" content="@hypertextadrien" />
+    
+    <meta name="twitter:title" content="Combining React Router and Shopify App Bridge Navigation" />
+    <meta name="twitter:description" content="Mostly blogging about web development and Open Data" />
+    <meta name="twitter:url" content="https://blog.dipasquale.fr/2019/02/28/polaris-react-router/" />
+    
+    <meta name="twitter:image" content="https://blog.dipasquale.fr/images/me.jpeg" />
+    
+
+</head>
+
+<body class="site">
+  
+	
+
+  <div class="site-wrap">
+    <header class="site-header px2 px-responsive">
+  <div class="mt2 wrap">
+    <div class="measure">
+      <a href="https://blog.dipasquale.fr" class="site-title">Adrien Di Pasquale Blog</a>
+      <nav class="site-nav">
+        <a href="https://www.dipasquale.fr">About</a>
+        
+
+
+
+    
+    
+    
+    
+
+    
+
+
+      </nav>
+      <div class="clearfix"></div>
+      
+        <div class="social-icons">
+  <div class="social-icons-right">
+    
+      <a class="fa fa-github" href="https://github.com/adipasquale"></a>
+    
+    
+    
+    
+    <a class="fa fa-rss" href="/feed.xml"></a>
+    
+      <a class="fa fa-twitter" href="https://twitter.com/hypertextadrien"></a>
+    
+    
+    
+    
+    
+      <a class="fa fa-envelope" href="mailto:adrien@dipasquale.fr"></a>
+    
+    
+      <a class="fa fa-linkedin" href="https://www.linkedin.com/in/adriendipasquale"></a>
+    
+    
+    
+    
+    
+  </div>
+  <div class="right">
+    
+    
+    
+  </div>
+</div>
+<div class="clearfix"></div>
+
+      
+    </div>
+  </div>
+</header>
+
+
+    <div class="post p2 p-responsive wrap" role="main">
+      <div class="measure">
+        
+
+
+<div class="post-header mb2">
+  <h1>Combining React Router and Shopify App Bridge Navigation</h1>
+  <span class="post-meta">Feb 28, 2019</span><br>
+  
+  <span class="post-meta small">
+  
+    2 minute read
+  
+  </span>
+</div>
+
+<article class="post-content">
+  <p>In this article we will show you a quick way to navigate correctly inside your react embedded app using shopify app-bridge and polaris libraries.</p>
+
+<h2 id="linking-links">Linking links</h2>
+
+<p>The first thing to do is to link the react router <code class="language-plaintext highlighter-rouge">Link</code>  component with shopify polaris <code class="language-plaintext highlighter-rouge">Link</code>. To do so, we pass an Adapter to our <code class="language-plaintext highlighter-rouge">AppProvider</code> component. Shopify anticipated this issue so you only have to pass the Adapter to the <code class="language-plaintext highlighter-rouge">AppProvider</code> component under the attribute <code class="language-plaintext highlighter-rouge">linkComponent</code>. Here is an example :</p>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">Link</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">react-router-dom</span><span class="dl">'</span>
+<span class="k">import</span> <span class="p">{</span> <span class="nx">AppProvider</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">@shopify/polaris</span><span class="dl">'</span>
+
+<span class="kd">function</span> <span class="nx">AdapterLink</span> <span class="p">({</span> <span class="nx">url</span><span class="p">,</span> <span class="p">...</span><span class="nx">rest</span> <span class="p">})</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="p">&lt;</span><span class="nc">Link</span> <span class="na">to</span><span class="p">=</span><span class="si">{</span><span class="nx">url</span><span class="si">}</span> <span class="si">{</span><span class="p">...</span><span class="nx">rest</span><span class="si">}</span> <span class="p">/&gt;</span>
+<span class="p">}</span>
+
+<span class="nx">ReactDOM</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span>
+  <span class="p">&lt;</span><span class="nc">AppProvider</span>
+    <span class="na">apiKey</span><span class="p">=</span><span class="si">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">apiKey</span><span class="si">}</span>
+    <span class="na">shopOrigin</span><span class="p">=</span><span class="si">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">shopOrigin</span><span class="si">}</span>
+    <span class="na">linkComponent</span><span class="p">=</span><span class="si">{</span><span class="nx">AdapterLink</span><span class="si">}</span>
+  <span class="p">&gt;</span>
+  ...
+  <span class="p">&lt;/</span><span class="nc">AppProvider</span><span class="p">&gt;</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="a-history-of-wrap">A history of wrap</h2>
+
+<p><a href="https://help.shopify.com/en/api/embedded-apps/app-bridge/actions/navigation/history">Here is how to use the app bridge history object to navigate inside your app.</a></p>
+
+<p>Now what we want is to provide to the history the url given to our <code class="language-plaintext highlighter-rouge">Route</code> component.</p>
+
+<h3 id="accessing-the-history-object">Accessing the history object</h3>
+
+<p>The doc does not tell us how to access the history from inside a react component. But it is actually possible to access it via <a href="https://reactjs.org/docs/context.html">React contexts</a> if your component is between two <code class="language-plaintext highlighter-rouge">AppProvider</code> components by adding this :</p>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">static</span> <span class="nx">contextTypes</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="na">polaris</span><span class="p">:</span> <span class="nx">PropTypes</span><span class="p">.</span><span class="nx">object</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<p>now you can call the <code class="language-plaintext highlighter-rouge">appBridge</code> inside your class, like for example in the constuctor :</p>
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">constructor</span><span class="p">(</span><span class="nx">props</span><span class="p">,</span><span class="nx">context</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">super</span><span class="p">(</span><span class="nx">props</span><span class="p">,</span> <span class="nx">context</span><span class="p">)</span>
+  <span class="kd">const</span> <span class="nx">app</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">polaris</span><span class="p">.</span><span class="nx">appBridge</span>
+<span class="p">}</span>
+</code></pre></div></div>
+<h3 id="wrapper">Wrapper</h3>
+
+<p>To combine both things we have to push the url of the <code class="language-plaintext highlighter-rouge">Route</code> inside the polaris history. So what we did is creating a wrapped component that does that every time he receives a new url :</p>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">History</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">@shopify/app-bridge/actions</span><span class="dl">'</span>
+<span class="k">import</span> <span class="p">{</span> <span class="nx">Route</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">react-router-dom</span><span class="dl">'</span>
+
+<span class="kd">function</span> <span class="nx">withShopifyEmbeddedAppPushState</span> <span class="p">(</span><span class="nx">WrappedComponent</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="kd">class</span> <span class="kd">extends</span> <span class="nx">React</span><span class="p">.</span><span class="nx">Component</span> <span class="p">{</span>
+    <span class="kd">static</span> <span class="nx">contextTypes</span> <span class="o">=</span> <span class="p">{</span>
+      <span class="na">polaris</span><span class="p">:</span> <span class="nx">PropTypes</span><span class="p">.</span><span class="nx">object</span>
+    <span class="p">};</span>
+
+    <span class="nx">componentWillReceiveProps</span> <span class="p">(</span><span class="nx">nextProps</span><span class="p">)</span> <span class="p">{</span>
+      <span class="kd">const</span> <span class="nx">app</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">context</span><span class="p">.</span><span class="nx">polaris</span><span class="p">.</span><span class="nx">appBridge</span>
+      <span class="kd">const</span> <span class="nx">history</span> <span class="o">=</span> <span class="nx">History</span><span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">app</span><span class="p">)</span>
+      <span class="nx">history</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">History</span><span class="p">.</span><span class="nx">Action</span><span class="p">.</span><span class="nx">PUSH</span><span class="p">,</span> <span class="nx">nextProps</span><span class="p">.</span><span class="nx">computedMatch</span><span class="p">.</span><span class="nx">url</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="nx">render</span> <span class="p">()</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="p">&lt;</span><span class="nc">WrappedComponent</span> <span class="si">{</span><span class="p">...</span><span class="k">this</span><span class="p">.</span><span class="nx">props</span><span class="si">}</span> <span class="p">/&gt;</span>
+    <span class="p">}</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">const</span> <span class="nx">ShopifyEmbeddedAppRoute</span> <span class="o">=</span> <span class="nx">withShopifyEmbeddedAppPushState</span><span class="p">(</span><span class="nx">Route</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h2 id="et-voilà-">Et voilà !</h2>
+
+<p>Here is what your rendering should like now :</p>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">ReactDOM</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span>
+   <span class="p">&lt;</span><span class="nc">AppProvider</span>
+     <span class="na">apiKey</span><span class="p">=</span><span class="si">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">apiKey</span><span class="si">}</span>
+     <span class="na">shopOrigin</span><span class="p">=</span><span class="si">{</span><span class="nx">props</span><span class="p">.</span><span class="nx">shopOrigin</span><span class="si">}</span>
+     <span class="na">linkComponent</span><span class="p">=</span><span class="si">{</span><span class="nx">AdapterLink</span><span class="si">}</span>
+   <span class="p">&gt;</span>
+     <span class="p">&lt;</span><span class="nc">BrowserRouter</span><span class="p">&gt;</span>
+       <span class="p">&lt;</span><span class="nt">div</span><span class="p">&gt;</span>
+         <span class="p">&lt;</span><span class="nc">Switch</span><span class="p">&gt;</span>
+           <span class="p">&lt;</span><span class="nc">ShopifyEmbeddedAppRoute</span>
+             <span class="na">path</span><span class="p">=</span><span class="s">'/products'</span>
+             <span class="na">render</span><span class="p">=</span><span class="si">{</span><span class="nx">p</span> <span class="o">=&gt;</span> <span class="p">&lt;</span><span class="nc">ProductsContainer</span> <span class="si">{</span><span class="p">...</span><span class="nx">p</span><span class="si">}</span> <span class="si">{</span><span class="p">...</span><span class="nx">props</span><span class="si">}</span> <span class="p">/&gt;</span><span class="si">}</span>
+           <span class="p">/&gt;</span>
+         <span class="p">&lt;/</span><span class="nc">Switch</span><span class="p">&gt;</span>
+       <span class="p">&lt;/</span><span class="nt">div</span><span class="p">&gt;</span>
+     <span class="p">&lt;/</span><span class="nc">BrowserRouter</span><span class="p">&gt;</span>
+   <span class="p">&lt;/</span><span class="nc">AppProvider</span><span class="p">&gt;</span>
+<span class="p">)</span>
+</code></pre></div></div>
+
+<p>Now if you place links inside your react app :</p>
+
+<div class="language-jsx highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="p">{</span> <span class="nx">Link</span> <span class="p">}</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">@shopify/polaris</span><span class="dl">'</span>
+<span class="o">&lt;</span><span class="nx">Link</span> <span class="nx">url</span><span class="o">=</span><span class="dl">'</span><span class="s1">/products</span><span class="dl">'</span><span class="o">&gt;</span><span class="nx">Subscription</span> <span class="nx">Products</span><span class="o">&lt;</span><span class="sr">/Link</span><span class="err">&gt;
+</span></code></pre></div></div>
+
+<p>it will call our wrapped component that will push the correct url inside shopify history !
+You are now in the right page with the correct url 🕺</p>
+
+</article>
+
+
+
+
+  <div class="py2 post-footer">
+  <img src="/images/me.jpeg" alt="Adrien Di Pasquale" class="avatar" />
+  <p>
+    👋 I'm Adrien Di Pasquale, a freelance web developer
+    <br/>
+    Follow me on Twitter : <a href="https://twitter.com/hypertextadrien">@hypertextadrien</a>
+  </p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+      </div>
+    </div>
+  </div>
+
+  <footer class="center">
+  <div class="measure">
+    <small>
+      Powered by <a href="https://jekyllrb.com/">Jekyll</a> with the <a href="https://github.com/johno/pixyll">Pyxill theme</a> and hosted on <a href="https://netlify.com">Netlify</a>
+    </small>
+  </div>
+</footer>
+
+
+</body>
+</html>
